@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { registerCommands } from "./commands/register.js";
 import { ReaderPanel } from "./webview/reader-panel.js";
 import { TocSidebar } from "./webview/toc-sidebar.js";
+import { initHighlighter } from "./markdown/parser.js";
 
 /** 活跃的阅读器面板，key 为文档 URI 路径 */
 const activePanels = new Map<string, ReaderPanel>();
@@ -10,7 +11,9 @@ const activePanels = new Map<string, ReaderPanel>();
 let tocSidebar: TocSidebar;
 
 /** 插件激活入口 */
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // 初始化 Shiki 语法高亮引擎
+  await initHighlighter();
   // 注册 TOC 侧边栏 Provider
   tocSidebar = new TocSidebar(context.extensionUri);
 

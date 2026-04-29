@@ -147,7 +147,7 @@ export class ReaderPanel {
     const source = new TextDecoder("utf-8").decode(content);
     console.log("[HummingbirdMD] 文件读取完成，长度:", source.length);
 
-    const doc = parseMarkdown(source);
+    const doc = await parseMarkdown(source);
     console.log("[HummingbirdMD] Markdown 解析完成，标题数:", doc.headings.length);
 
     const theme = getTheme();

@@ -190,8 +190,17 @@ function getReaderStyles(): string {
 
     /* 代码 */
     code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; }
-    pre { background: var(--code-bg); padding: 16px; border-radius: 8px; overflow-x: auto; margin-bottom: 1em; }
+    pre { padding: 16px; border-radius: 8px; overflow-x: auto; margin-bottom: 1em; }
     pre code { background: none; padding: 0; font-size: 0.88em; line-height: 1.6; }
+
+    /* Shiki 双主题切换：亮色覆盖纯白背景，暗色通过 CSS 变量覆盖 */
+    [data-theme="light"] .shiki {
+      background-color: #f6f8fa !important;
+    }
+    [data-theme="dark"] .shiki, [data-theme="dark"] .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+    }
 
     /* 引用 */
     blockquote { border-left: 4px solid var(--blockquote-border); padding: 0.5em 1em; margin: 1em 0; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 0 4px 4px 0; }
