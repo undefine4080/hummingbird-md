@@ -88,7 +88,7 @@ export class ReaderPanel {
     const panel = vscode.window.createWebviewPanel(
       "hummingbird-md-reader",
       `阅读: ${fileName}`,
-      vscode.ViewColumn.Beside,
+      vscode.ViewColumn.Active,
       {
         enableScripts: true,
         retainContextWhenHidden: true,

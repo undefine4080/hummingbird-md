@@ -12,6 +12,9 @@ type ToWebview = MessageProtocol.ToWebview;
 /** 当前被高亮的 heading ID */
 let activeHeadingId = "";
 
+/** 程序化滚动期间抑制 headingChanged 消息 */
+let suppressHeadingChange = false;
+
 /** Intersection Observer 实例 */
 let headingObserver: IntersectionObserver | null = null;
 
@@ -56,7 +59,7 @@ function setupHeadingObserver(): void {
         }
       }
 
-      if (topId && topId !== activeHeadingId) {
+      if (topId && topId !== activeHeadingId && !suppressHeadingChange) {
         activeHeadingId = topId;
         postMessage({ type: "headingChanged", data: { id: topId } });
       }
@@ -127,8 +130,19 @@ function scrollToHeading(id: string): void {
     return;
   }
 
+  // 立即更新高亮 ID，防止 Observer 重复触发
+  activeHeadingId = id;
+
+  // 抑制滚动过程中的 headingChanged 消息
+  suppressHeadingChange = true;
+
   // 平滑滚动到目标位置
   target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // 滚动结束后恢复
+  setTimeout((): void => {
+    suppressHeadingChange = false;
+  }, 1000);
 
   // 添加短暂高亮动画
   target.classList.add("heading-highlight");

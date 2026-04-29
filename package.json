@@ -26,10 +26,18 @@
     "commands": [
       {
         "command": "hummingbird-md.openReader",
-        "title": "Hummingbird MD: 用阅读模式打开"
+        "title": "Hummingbird MD: 用阅读模式打开",
+        "icon": "media/icon.svg"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "hummingbird-md.openReader",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        }
+      ],
       "explorer/context": [
         {
           "command": "hummingbird-md.openReader",
