@@ -1,5 +1,4 @@
 import mermaid from "mermaid";
-import type { RenderResult } from "mermaid";
 import type { Theme } from "../../types/index.js";
 
 /** window.__INITIAL_DATA__ 的类型声明 */
@@ -228,82 +227,65 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
 }
 
 /**
- * 渲染单个 mermaid 代码块
+ * 渲染单个 mermaid 图表
  */
-async function renderSingleBlock(
-  codeBlock: Element,
-  diagramIndex: number,
+async function renderSingleDiagram(
+  el: HTMLElement,
+  index: number,
 ): Promise<void> {
-  const pre = codeBlock.closest("pre");
-  if (!pre || !pre.parentNode) {
+  if (!el.parentNode) {
     return;
   }
 
-  const source = codeBlock.textContent ?? "";
-  const diagramId = `mermaid-diagram-${diagramIndex}`;
+  const source = el.textContent ?? "";
+  const diagramId = `mermaid-diagram-${index}`;
 
   try {
-    const result: RenderResult = await mermaid.render(diagramId, source);
-    const svgHtml = result.svg;
+    const result = await mermaid.render(diagramId, source);
 
-    // 缓存 SVG 用于全屏展示
-    diagramSvgs[diagramIndex] = svgHtml;
+    diagramSvgs[index] = result.svg;
 
-    // 创建成功渲染的容器
     const container = document.createElement("div");
     container.className = "mermaid-container";
     container.id = diagramId;
-    container.innerHTML = svgHtml;
+    container.innerHTML = result.svg;
 
-    // 如果 mermaid 提供了 bindFunctions，调用它以激活交互
+    el.parentNode.replaceChild(container, el);
+
     if (result.bindFunctions) {
       result.bindFunctions(container);
     }
 
-    // 点击打开全屏
     container.addEventListener("click", (): void => {
-      showFullscreen(diagramIndex);
+      showFullscreen(index);
     });
-
-    // 替换原始 pre 元素
-    pre.parentNode.replaceChild(container, pre);
   } catch (error: unknown) {
-    // 提取错误信息
     const err = error as { message?: string; str?: string };
     const errorMessage = err?.message ?? err?.str ?? String(error);
 
-    // 仍然缓存占位（保持索引一致）
-    diagramSvgs[diagramIndex] = "";
+    diagramSvgs[index] = "";
 
-    // 创建错误展示容器
     const errorContainer = createErrorElement(source, errorMessage);
     errorContainer.id = diagramId;
 
-    // 替换原始 pre 元素
-    pre.parentNode.replaceChild(errorContainer, pre);
+    el.parentNode.replaceChild(errorContainer, el);
   }
 }
 
 /**
- * 渲染页面中的所有 mermaid 代码块
+ * 渲染页面中的所有 mermaid 图表
  *
- * 使用 reduce 串联 Promise 以保持顺序执行（mermaid 内部依赖全局状态）
+ * 顺序执行渲染，避免 mermaid 内部全局状态冲突
  */
 async function renderMermaidBlocks(): Promise<void> {
-  const codeBlocks = Array.from(
-    document.querySelectorAll<HTMLPreElement>("pre code.language-mermaid"),
-  );
-
-  if (codeBlocks.length === 0) {
+  const elements = Array.from(document.querySelectorAll<HTMLElement>(".mermaid"));
+  if (elements.length === 0) {
     return;
   }
 
-  // 顺序执行渲染，避免 mermaid 全局状态冲突
-  await codeBlocks.reduce(
-    (chain, codeBlock, index) =>
-      chain.then(() => renderSingleBlock(codeBlock, index)),
-    Promise.resolve(),
-  );
+  for (let i = 0; i < elements.length; i++) {
+    await renderSingleDiagram(elements[i], i);
+  }
 }
 
 /**

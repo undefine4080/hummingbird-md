@@ -7,6 +7,25 @@ const md = new MarkdownIt({
   typographer: true,
 });
 
+// 保存原始 fence 渲染器，非 mermaid 代码块回退到默认渲染
+const defaultFenceRenderer = md.renderer.rules.fence;
+
+// 将 mermaid 代码块渲染为 <div class="mermaid">，供前端 mermaid.run() 处理
+md.renderer.rules.fence = (tokens, idx, options, env, self): string => {
+  const token = tokens[idx];
+  if (token.info.trim() === "mermaid") {
+    const escaped = token.content
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    return `<div class="mermaid">${escaped}</div>`;
+  }
+  if (defaultFenceRenderer) {
+    return defaultFenceRenderer(tokens, idx, options, env, self);
+  }
+  return "";
+};
+
 /** 为标题生成锚点 ID */
 function generateHeadingId(text: string, existingIds: Set<string>): string {
   const base = text
