@@ -13,8 +13,37 @@ declare global {
   }
 }
 
+/** 最小/最大缩放比例 */
+const MIN_SCALE = 0.1;
+const MAX_SCALE = 20;
+/** 每次按钮缩放的步进倍率 */
+const ZOOM_STEP = 1.25;
+
+/** 全屏查看器状态 */
+interface ViewerState {
+  scale: number;
+  translateX: number;
+  translateY: number;
+  rotation: number;
+  isDragging: boolean;
+  dragStartX: number;
+  dragStartY: number;
+  dragStartTranslateX: number;
+  dragStartTranslateY: number;
+  isPinching: boolean;
+  pinchStartDistance: number;
+  pinchStartScale: number;
+}
+
 /** 当前全屏展示的图表索引（-1 表示未展示） */
 let currentDiagramIndex = -1;
+/** 全屏查看器状态实例 */
+const vs: ViewerState = {
+  scale: 1, translateX: 0, translateY: 0, rotation: 0,
+  isDragging: false, dragStartX: 0, dragStartY: 0,
+  dragStartTranslateX: 0, dragStartTranslateY: 0,
+  isPinching: false, pinchStartDistance: 0, pinchStartScale: 1,
+};
 
 /** 缓存所有渲染成功的 SVG 内容，索引自增对应 */
 const diagramSvgs: string[] = [];
@@ -142,9 +171,19 @@ function showFullscreen(diagramIndex: number): void {
   currentDiagramIndex = diagramIndex;
   title.textContent = `Mermaid 图表 #${diagramIndex + 1}`;
 
-  // 将缓存的 SVG 插入全屏容器
   content.innerHTML = diagramSvgs[diagramIndex] ?? "";
   overlay.classList.add("active");
+
+  // 重置变换状态
+  vs.scale = 1;
+  vs.translateX = 0;
+  vs.translateY = 0;
+  vs.rotation = 0;
+
+  // 等 DOM 渲染后自适应
+  requestAnimationFrame((): void => {
+    fitToViewport();
+  });
 }
 
 /**
@@ -163,31 +202,217 @@ function closeFullscreen(): void {
   currentDiagramIndex = -1;
 }
 
+/** 获取全屏内容区域的 SVG 元素 */
+function getFullscreenSvg(): SVGSVGElement | null {
+  const content = document.getElementById("mermaid-fullscreen-content");
+  return content?.querySelector("svg") ?? null;
+}
+
+/** 将 CSS transform 应用到全屏 SVG 元素 */
+function applyTransform(): void {
+  const svg = getFullscreenSvg();
+  if (!svg) {
+    return;
+  }
+  svg.style.transform =
+    `translate(${vs.translateX}px, ${vs.translateY}px) scale(${vs.scale}) rotate(${vs.rotation}deg)`;
+}
+
+/** 将缩放值限制在允许范围内 */
+function clampScale(scale: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+}
+
+/** 按给定倍率缩放 */
+function zoomBy(factor: number): void {
+  vs.scale = clampScale(vs.scale * factor);
+  applyTransform();
+}
+
+/** 适应视口：SVG 完整显示在画布内 */
+function fitToViewport(): void {
+  const svg = getFullscreenSvg();
+  const content = document.getElementById("mermaid-fullscreen-content");
+  if (!svg || !content) {
+    return;
+  }
+
+  const vb = svg.viewBox?.baseVal;
+  const svgW = vb?.width ?? svg.clientWidth ?? 800;
+  const svgH = vb?.height ?? svg.clientHeight ?? 600;
+  if (svgW === 0 || svgH === 0) {
+    return;
+  }
+
+  const cw = content.clientWidth;
+  const ch = content.clientHeight;
+  const padding = 0.9;
+  const scaleX = (cw * padding) / svgW;
+  const scaleY = (ch * padding) / svgH;
+  vs.scale = Math.min(scaleX, scaleY, 1);
+  vs.translateX = 0;
+  vs.translateY = 0;
+  applyTransform();
+}
+
+/** 恢复 1:1 原始尺寸 */
+function resetToOriginal(): void {
+  vs.scale = 1;
+  vs.translateX = 0;
+  vs.translateY = 0;
+  applyTransform();
+}
+
+/** 计算两个触摸点之间的距离 */
+function getTouchDistance(t1: Touch, t2: Touch): number {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 /**
- * 绑定全屏 overlay 的交互事件（关闭、下载）
+ * 绑定全屏 overlay 的所有交互事件
  */
 function bindOverlayEvents(): void {
-  const closeBtn = document.getElementById("mf-close");
-  const downloadBtn = document.getElementById("mf-download");
+  const content = document.getElementById("mermaid-fullscreen-content");
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", (): void => {
-      closeFullscreen();
-    });
+  // --- 工具栏按钮 ---
+  document.getElementById("mf-zoom-in")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    zoomBy(ZOOM_STEP);
+  });
+  document.getElementById("mf-zoom-out")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    zoomBy(1 / ZOOM_STEP);
+  });
+  document.getElementById("mf-zoom-fit")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    fitToViewport();
+  });
+  document.getElementById("mf-zoom-original")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    resetToOriginal();
+  });
+  document.getElementById("mf-rotate-left")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    vs.rotation -= 90;
+    applyTransform();
+  });
+  document.getElementById("mf-rotate-right")?.addEventListener("click", (e): void => {
+    e.stopPropagation();
+    vs.rotation += 90;
+    applyTransform();
+  });
+  document.getElementById("mf-close")?.addEventListener("click", (): void => {
+    closeFullscreen();
+  });
+  document.getElementById("mf-download")?.addEventListener("click", (): void => {
+    if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
+      downloadSvgAsJpg(diagramSvgs[currentDiagramIndex], currentDiagramIndex);
+    }
+  });
+
+  if (!content) {
+    return;
   }
 
-  if (downloadBtn) {
-    downloadBtn.addEventListener("click", (): void => {
-      if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
-        downloadSvgAsJpg(diagramSvgs[currentDiagramIndex], currentDiagramIndex);
-      }
-    });
-  }
+  // --- 鼠标拖拽平移 ---
+  content.addEventListener("mousedown", (e): void => {
+    if (e.button !== 0) {
+      return;
+    }
+    e.preventDefault();
+    vs.isDragging = true;
+    vs.dragStartX = e.clientX;
+    vs.dragStartY = e.clientY;
+    vs.dragStartTranslateX = vs.translateX;
+    vs.dragStartTranslateY = vs.translateY;
+  });
+  window.addEventListener("mousemove", (e): void => {
+    if (!vs.isDragging) {
+      return;
+    }
+    e.preventDefault();
+    vs.translateX = vs.dragStartTranslateX + (e.clientX - vs.dragStartX);
+    vs.translateY = vs.dragStartTranslateY + (e.clientY - vs.dragStartY);
+    applyTransform();
+  });
+  window.addEventListener("mouseup", (): void => {
+    vs.isDragging = false;
+  });
 
-  // Esc 关闭
+  // --- 滚轮缩放（以鼠标位置为中心） ---
+  content.addEventListener("wheel", (e): void => {
+    e.preventDefault();
+    const rect = content.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - rect.width / 2;
+    const mouseY = e.clientY - rect.top - rect.height / 2;
+    const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+    const newScale = clampScale(vs.scale * factor);
+    const ratio = newScale / vs.scale;
+    vs.translateX = mouseX - ratio * (mouseX - vs.translateX);
+    vs.translateY = mouseY - ratio * (mouseY - vs.translateY);
+    vs.scale = newScale;
+    applyTransform();
+  }, { passive: false });
+
+  // --- 触摸手势 ---
+  content.addEventListener("touchstart", (e): void => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      vs.isPinching = true;
+      vs.pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      vs.pinchStartScale = vs.scale;
+    } else if (e.touches.length === 1) {
+      vs.isDragging = true;
+      vs.dragStartX = e.touches[0].clientX;
+      vs.dragStartY = e.touches[0].clientY;
+      vs.dragStartTranslateX = vs.translateX;
+      vs.dragStartTranslateY = vs.translateY;
+    }
+  }, { passive: false });
+  content.addEventListener("touchmove", (e): void => {
+    if (vs.isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      vs.scale = clampScale(vs.pinchStartScale * (dist / vs.pinchStartDistance));
+      applyTransform();
+    } else if (vs.isDragging && e.touches.length === 1) {
+      e.preventDefault();
+      vs.translateX = vs.dragStartTranslateX + (e.touches[0].clientX - vs.dragStartX);
+      vs.translateY = vs.dragStartTranslateY + (e.touches[0].clientY - vs.dragStartY);
+      applyTransform();
+    }
+  }, { passive: false });
+  const endTouch = (): void => {
+    vs.isPinching = false;
+    vs.isDragging = false;
+  };
+  content.addEventListener("touchend", endTouch);
+  content.addEventListener("touchcancel", endTouch);
+
+  // --- 键盘快捷键 ---
   document.addEventListener("keydown", (e: KeyboardEvent): void => {
-    if (e.key === "Escape" && currentDiagramIndex >= 0) {
-      closeFullscreen();
+    if (currentDiagramIndex < 0) {
+      return;
+    }
+    switch (e.key) {
+      case "Escape":
+        e.preventDefault();
+        closeFullscreen();
+        break;
+      case "+":
+      case "=":
+        e.preventDefault();
+        zoomBy(ZOOM_STEP);
+        break;
+      case "-":
+      case "_":
+        e.preventDefault();
+        zoomBy(1 / ZOOM_STEP);
+        break;
+      default:
+        break;
     }
   });
 }

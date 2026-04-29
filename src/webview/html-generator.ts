@@ -50,6 +50,14 @@ export function getReaderHtml(
   <div id="mermaid-fullscreen-overlay" class="mermaid-fullscreen-overlay">
     <div class="mermaid-fullscreen-toolbar">
       <span id="mf-title">Mermaid 图表</span>
+      <span class="mf-separator"></span>
+      <button id="mf-zoom-in" title="放大">+</button>
+      <button id="mf-zoom-out" title="缩小">−</button>
+      <button id="mf-zoom-fit" title="适应窗口">⊡</button>
+      <button id="mf-zoom-original" title="原始尺寸">1:1</button>
+      <span class="mf-separator"></span>
+      <button id="mf-rotate-left" title="左旋 90°">↺</button>
+      <button id="mf-rotate-right" title="右旋 90°">↻</button>
       <span class="mf-spacer"></span>
       <button id="mf-download" title="下载为 JPG">下载 JPG</button>
       <button id="mf-close" title="关闭 (Esc)">✕</button>
@@ -201,13 +209,15 @@ function getReaderStyles(): string {
     /* Mermaid 全屏 */
     .mermaid-fullscreen-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.9); display: none; flex-direction: column; }
     .mermaid-fullscreen-overlay.active { display: flex; }
-    .mermaid-fullscreen-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 14px; }
-    .mermaid-fullscreen-toolbar button { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .mermaid-fullscreen-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 14px; }
+    .mermaid-fullscreen-toolbar button { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
     .mermaid-fullscreen-toolbar button:hover { background: rgba(255,255,255,0.15); }
+    .mf-separator { width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 4px; }
     .mf-spacer { flex: 1; }
     .mf-title { color: rgba(255,255,255,0.7); font-size: 13px; }
-    .mermaid-fullscreen-content { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .mermaid-fullscreen-content svg { max-width: 100%; max-height: 100%; }
+    .mermaid-fullscreen-content { flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    .mermaid-fullscreen-content:active { cursor: grabbing; }
+    .mermaid-fullscreen-content svg { max-width: none; max-height: none; user-select: none; -webkit-user-drag: none; transition: none; }
   `;
 }
 
