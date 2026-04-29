@@ -40,6 +40,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   });
 
+  // 设置 TOC 侧边栏主题变更回调：通知活跃的 ReaderPanel 切换主题
+  tocSidebar.setOnThemeChanged((theme: string): void => {
+    for (const panel of activePanels.values()) {
+      panel.applyTheme(theme as "light" | "dark");
+    }
+  });
+
   const tocDisposable = vscode.window.registerWebviewViewProvider(
     "hummingbird-md.tocView",
     tocSidebar,

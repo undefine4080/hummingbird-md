@@ -37,6 +37,12 @@ interface ViewerState {
 
 /** 当前全屏展示的图表索引（-1 表示未展示） */
 let currentDiagramIndex = -1;
+
+/** 缓存所有渲染成功的 SVG 内容 */
+const diagramSvgs: string[] = [];
+
+/** 缓存所有图表的原始 mermaid 源码，用于主题切换时重新渲染 */
+const diagramSources: string[] = [];
 /** 全屏查看器状态实例 */
 const vs: ViewerState = {
   scale: 1, translateX: 0, translateY: 0, rotation: 0,
@@ -44,10 +50,6 @@ const vs: ViewerState = {
   dragStartTranslateX: 0, dragStartTranslateY: 0,
   isPinching: false, pinchStartDistance: 0, pinchStartScale: 1,
 };
-
-/** 缓存所有渲染成功的 SVG 内容，索引自增对应 */
-const diagramSvgs: string[] = [];
-
 /**
  * 获取当前主题对应的 mermaid 主题名
  */
@@ -464,6 +466,7 @@ async function renderSingleDiagram(
 
   const source = el.textContent ?? "";
   const diagramId = `mermaid-diagram-${index}`;
+  diagramSources[index] = source;
 
   try {
     const result = await mermaid.render(diagramId, source);
@@ -524,4 +527,44 @@ export async function initMermaidRenderer(): Promise<void> {
   initMermaidConfig();
   bindOverlayEvents();
   await renderMermaidBlocks();
+}
+
+/**
+ * 切换主题后重新渲染所有 mermaid 图表
+ */
+export async function rerenderAllDiagrams(theme: "dark" | "default"): Promise<void> {
+  if (diagramSources.length === 0) {
+    return;
+  }
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme,
+    securityLevel: "loose",
+  });
+
+  for (let i = 0; i < diagramSources.length; i++) {
+    const source = diagramSources[i];
+    if (!source) {
+      continue;
+    }
+
+    const containerId = `mermaid-diagram-${i}`;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      continue;
+    }
+
+    try {
+      const result = await mermaid.render(`mermaid-rerender-${Date.now()}-${i}`, source);
+      diagramSvgs[i] = result.svg;
+      container.innerHTML = result.svg;
+
+      if (result.bindFunctions) {
+        result.bindFunctions(container);
+      }
+    } catch {
+      // 重新渲染失败时保持原状
+    }
+  }
 }

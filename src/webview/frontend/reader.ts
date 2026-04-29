@@ -91,25 +91,20 @@ function setupMessageListeners(): void {
 function handleMessage(message: ToWebview): void {
   switch (message.type) {
     case "updateTheme":
-      applyTheme(message.data.theme);
+      // 主题切换由 reader-entry.ts 统一处理（含 mermaid 重渲染）
       break;
     case "highlightHeading":
       scrollToHeading(message.data.id);
       break;
     case "init":
-      // init 消息在 HTML 生成阶段已处理，此处不做额外操作
       break;
     default:
       break;
   }
 }
 
-/**
- * 应用主题
- *
- * 切换 <html> 元素的 data-theme 属性，CSS 变量会自动响应。
- */
-function applyTheme(theme: Theme): void {
+/** 应用主题（切换 data-theme 属性，CSS 变量自动响应） */
+export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute("data-theme", theme);
 }
 

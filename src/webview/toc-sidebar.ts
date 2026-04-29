@@ -26,6 +26,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 标题点击回调，通知 ReaderPanel 滚动到对应位置 */
   private onHeadingClicked: ((id: string) => void) | null = null;
 
+  /** 主题变更回调，通知 ReaderPanel 切换主题 */
+  private onThemeChanged: ((theme: Theme) => void) | null = null;
+
   /** 消息监听器 */
   private messageListener: vscode.Disposable | null = null;
 
@@ -36,6 +39,11 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 设置标题点击回调 */
   public setOnHeadingClicked(callback: (id: string) => void): void {
     this.onHeadingClicked = callback;
+  }
+
+  /** 设置主题变更回调 */
+  public setOnThemeChanged(callback: (theme: Theme) => void): void {
+    this.onThemeChanged = callback;
   }
 
   /** WebviewViewProvider 接口实现：解析 WebviewView */
@@ -120,9 +128,11 @@ export class TocSidebar implements vscode.WebviewViewProvider {
         break;
 
       case "themeChanged":
+        this.onThemeChanged?.(message.data.theme);
+        break;
+
       case "fontChanged":
       case "openMermaidFullscreen":
-        // TOC 侧边栏不处理这些消息
         break;
     }
   }

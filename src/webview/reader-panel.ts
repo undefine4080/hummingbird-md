@@ -116,6 +116,11 @@ export class ReaderPanel {
     this.postMessage({ type: "highlightHeading", data: { id } });
   }
 
+  /** 应用主题（从 TOC 侧边栏触发） */
+  public applyTheme(theme: Theme): void {
+    this.postMessage({ type: "updateTheme", data: { theme } });
+  }
+
   /** 更新文档内容（重新加载 Markdown） */
   public async updateDocument(uri: vscode.Uri): Promise<void> {
     this.currentUri = uri;

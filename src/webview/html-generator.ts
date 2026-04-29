@@ -89,12 +89,25 @@ export function getTocHtml(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
   <style>
     ${getTocStyles()}
   </style>
 </head>
 <body>
+  <div class="settings-panel">
+    <div class="settings-header" id="settings-toggle">
+      <span class="settings-header-text">设置</span>
+      <span class="settings-arrow" id="settings-arrow">▶</span>
+    </div>
+    <div class="settings-body" id="settings-body">
+      <div class="settings-section-label">主题</div>
+      <div class="settings-theme-group">
+        <button class="theme-btn" id="theme-btn-light" title="浅色主题">☀ 浅色</button>
+        <button class="theme-btn" id="theme-btn-dark" title="深色主题">🌙 深色</button>
+      </div>
+    </div>
+  </div>
   <div id="toc-root"></div>
   <script nonce="${nonce}">
     window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme })};
@@ -121,6 +134,11 @@ function getReaderStyles(): string {
       --blockquote-border: #0d6efd;
       --table-stripe: #f8f9fa;
       --shadow: rgba(0,0,0,0.1);
+      --overlay-bg: #ffffff;
+      --overlay-toolbar-bg: rgba(255,255,255,0.95);
+      --overlay-btn-border: rgba(0,0,0,0.15);
+      --overlay-btn-text: #333;
+      --overlay-btn-hover: rgba(0,0,0,0.08);
     }
     [data-theme="dark"] {
       --bg-primary: #1e1e2e;
@@ -133,7 +151,16 @@ function getReaderStyles(): string {
       --blockquote-border: #89b4fa;
       --table-stripe: #2a2a3e;
       --shadow: rgba(0,0,0,0.3);
+      --overlay-bg: rgba(0,0,0,0.9);
+      --overlay-toolbar-bg: rgba(0,0,0,0.7);
+      --overlay-btn-border: rgba(255,255,255,0.2);
+      --overlay-btn-text: #fff;
+      --overlay-btn-hover: rgba(255,255,255,0.15);
     }
+
+    /* 主题切换过渡 */
+    html { transition: background-color 0.3s, color 0.3s; }
+    body { transition: background-color 0.3s, color 0.3s; }
 
     body {
       background: var(--bg-primary);
@@ -187,12 +214,12 @@ function getReaderStyles(): string {
     #reader-content img:hover { transform: scale(1.01); box-shadow: 0 4px 16px var(--shadow); }
 
     /* 图片查看器 */
-    .image-viewer-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.9); display: none; flex-direction: column; }
+    .image-viewer-overlay { position: fixed; inset: 0; z-index: 1000; background: var(--overlay-bg); display: none; flex-direction: column; }
     .image-viewer-overlay.active { display: flex; }
-    .image-viewer-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 14px; }
-    .image-viewer-toolbar button { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-    .image-viewer-toolbar button:hover { background: rgba(255,255,255,0.15); }
-    .iv-separator { width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 4px; }
+    .image-viewer-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: var(--overlay-toolbar-bg); color: var(--overlay-btn-text); font-size: 14px; }
+    .image-viewer-toolbar button { background: none; border: 1px solid var(--overlay-btn-border); color: var(--overlay-btn-text); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .image-viewer-toolbar button:hover { background: var(--overlay-btn-hover); }
+    .iv-separator { width: 1px; height: 20px; background: var(--overlay-btn-border); margin: 0 4px; }
     .iv-counter { color: rgba(255,255,255,0.6); font-size: 12px; min-width: 40px; text-align: center; }
     .iv-spacer { flex: 1; }
     .image-viewer-canvas { flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: grab; }
@@ -207,12 +234,12 @@ function getReaderStyles(): string {
     .mermaid-error-title { color: #e74c3c; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
 
     /* Mermaid 全屏 */
-    .mermaid-fullscreen-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.9); display: none; flex-direction: column; }
+    .mermaid-fullscreen-overlay { position: fixed; inset: 0; z-index: 1000; background: var(--overlay-bg); display: none; flex-direction: column; }
     .mermaid-fullscreen-overlay.active { display: flex; }
-    .mermaid-fullscreen-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 14px; }
-    .mermaid-fullscreen-toolbar button { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-    .mermaid-fullscreen-toolbar button:hover { background: rgba(255,255,255,0.15); }
-    .mf-separator { width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 4px; }
+    .mermaid-fullscreen-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: var(--overlay-toolbar-bg); color: var(--overlay-btn-text); font-size: 14px; }
+    .mermaid-fullscreen-toolbar button { background: none; border: 1px solid var(--overlay-btn-border); color: var(--overlay-btn-text); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .mermaid-fullscreen-toolbar button:hover { background: var(--overlay-btn-hover); }
+    .mf-separator { width: 1px; height: 20px; background: var(--overlay-btn-border); margin: 0 4px; }
     .mf-spacer { flex: 1; }
     .mf-title { color: rgba(255,255,255,0.7); font-size: 13px; }
     .mermaid-fullscreen-content { flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: grab; }
@@ -246,6 +273,21 @@ function getTocStyles(): string {
     }
 
     body { background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; }
+
+    /* 设置面板 */
+    .settings-panel { border-bottom: 1px solid var(--border-color); }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none; }
+    .settings-header:hover { background: var(--bg-hover); }
+    .settings-header-text { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .settings-arrow { font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
+    .settings-arrow.open { transform: rotate(90deg); }
+    .settings-body { display: none; padding: 8px 12px 12px; }
+    .settings-body.open { display: block; }
+    .settings-section-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+    .settings-theme-group { display: flex; gap: 6px; }
+    .theme-btn { flex: 1; padding: 6px 0; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font-size: 12px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .theme-btn:hover { background: var(--bg-hover); }
+    .theme-btn.active { border-color: var(--accent-color); background: var(--bg-active); color: var(--accent-color); font-weight: 500; }
 
     .toc-empty { color: var(--text-secondary); padding: 16px; text-align: center; font-style: italic; }
 

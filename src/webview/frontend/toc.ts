@@ -143,6 +143,42 @@ export function initToc(): void {
   // 应用初始主题
   updateTheme(data.theme);
 
+  // 初始化设置面板
+  initSettingsPanel(data.theme);
+
   // 注册消息监听
   setupMessageListeners();
+}
+
+/** 初始化设置面板 */
+function initSettingsPanel(currentTheme: string): void {
+  const toggle = document.getElementById("settings-toggle");
+  const arrow = document.getElementById("settings-arrow");
+  const body = document.getElementById("settings-body");
+  const lightBtn = document.getElementById("theme-btn-light");
+  const darkBtn = document.getElementById("theme-btn-dark");
+
+  // 折叠/展开
+  toggle?.addEventListener("click", (): void => {
+    const isOpen = body?.classList.toggle("open");
+    arrow?.classList.toggle("open", isOpen);
+  });
+
+  // 主题切换按钮
+  const setActiveThemeBtn = (theme: string): void => {
+    lightBtn?.classList.toggle("active", theme === "light");
+    darkBtn?.classList.toggle("active", theme === "dark");
+  };
+
+  setActiveThemeBtn(currentTheme);
+
+  lightBtn?.addEventListener("click", (): void => {
+    setActiveThemeBtn("light");
+    postMessage({ type: "themeChanged", data: { theme: "light" } });
+  });
+
+  darkBtn?.addEventListener("click", (): void => {
+    setActiveThemeBtn("dark");
+    postMessage({ type: "themeChanged", data: { theme: "dark" } });
+  });
 }
