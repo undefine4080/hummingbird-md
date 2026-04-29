@@ -20,7 +20,7 @@ export function getReaderHtml(
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https: http: ${webview.cspSource};" />
-  <title>Hummingbird MD Reader</title>
+  <title>Hummingbird MD</title>
   <style>
     ${getReaderStyles()}
   </style>
@@ -103,8 +103,8 @@ export function getTocHtml(
     <div class="settings-body" id="settings-body">
       <div class="settings-section-label">主题</div>
       <div class="settings-theme-group">
-        <button class="theme-btn" id="theme-btn-light" title="浅色主题">☀ 浅色</button>
-        <button class="theme-btn" id="theme-btn-dark" title="深色主题">🌙 深色</button>
+        <button class="theme-btn" id="theme-btn-light" title="浅色主题">浅色</button>
+        <button class="theme-btn" id="theme-btn-dark" title="深色主题">深色</button>
       </div>
     </div>
   </div>

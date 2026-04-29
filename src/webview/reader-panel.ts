@@ -87,7 +87,7 @@ export class ReaderPanel {
 
     const panel = vscode.window.createWebviewPanel(
       "hummingbird-md-reader",
-      `阅读: ${fileName}`,
+      `预览: ${fileName}`,
       vscode.ViewColumn.Active,
       {
         enableScripts: true,
@@ -130,7 +130,7 @@ export class ReaderPanel {
     };
 
     const fileName = uri.path.split("/").pop() ?? "未命名";
-    this.panel.title = `阅读: ${fileName}`;
+    this.panel.title = `预览: ${fileName}`;
 
     await this.loadAndRender();
   }

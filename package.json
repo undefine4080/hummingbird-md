@@ -26,7 +26,7 @@
     "commands": [
       {
         "command": "hummingbird-md.openReader",
-        "title": "Hummingbird MD: 用阅读模式打开",
+        "title": "Preview in Hummingbird MD",
         "icon": "media/icon.svg"
       }
     ],
@@ -57,7 +57,7 @@
       "activitybar": [
         {
           "id": "hummingbird-md-toc",
-          "title": "Hummingbird MD 目录",
+          "title": "Hummingbird MD",
           "icon": "media/icon.svg"
         }
       ]
@@ -67,7 +67,7 @@
         {
           "type": "webview",
           "id": "hummingbird-md.tocView",
-          "name": "目录"
+          "name": "dashboard"
         }
       ]
     }

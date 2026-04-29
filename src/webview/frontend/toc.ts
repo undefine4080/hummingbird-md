@@ -42,7 +42,7 @@ function renderToc(container: HTMLElement, headings: Heading[]): void {
   if (headings.length === 0) {
     const empty = document.createElement("div");
     empty.className = "toc-empty";
-    empty.textContent = "此文档没有标题";
+    empty.textContent = "当前文档无标题";
     container.appendChild(empty);
     return;
   }
