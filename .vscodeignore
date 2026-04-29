@@ -1,7 +1,14 @@
 .vscode/**
-.src/**
+.vscode-test/**
+src/**
 node_modules/**
-esbuild.js
+.gitignore
 tsconfig.json
+esbuild.cjs
 eslint.config.js
-*.map
+**/*.ts
+**/*.map
+.ai/**
+CLAUDE.md
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
