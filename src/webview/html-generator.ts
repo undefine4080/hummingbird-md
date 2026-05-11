@@ -1,6 +1,151 @@
 import * as vscode from "vscode";
 import type { DocumentStats, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
 
+/** 字体选项 */
+interface FontOption {
+  /** font-family CSS 值 */
+  value: string;
+  /** 显示名称 */
+  label: string;
+  /** 用于 Canvas 验证的字体族名称（取 value 中第一个） */
+  detectName: string;
+}
+
+/** 字体分组 */
+interface FontGroup {
+  /** 分组显示名称 */
+  label: string;
+  /** 分组内的字体选项 */
+  fonts: FontOption[];
+  /** 该分组仅在指定平台显示（不指定则所有平台都显示） */
+  platform?: NodeJS.Platform | NodeJS.Platform[];
+}
+
+/** 字体数据库：按分组定义所有候选字体 */
+const FONT_DATABASE: FontGroup[] = [
+  {
+    label: "系统 / 无衬线",
+    fonts: [
+      { value: "-apple-system, 'Segoe UI', sans-serif", label: "系统默认", detectName: "-apple-system" },
+      { value: "system-ui, sans-serif", label: "system-ui", detectName: "system-ui" },
+      { value: "Arial, Helvetica, sans-serif", label: "Arial", detectName: "Arial" },
+      { value: "Tahoma, Geneva, sans-serif", label: "Tahoma", detectName: "Tahoma" },
+      { value: "Verdana, Geneva, sans-serif", label: "Verdana", detectName: "Verdana" },
+    ],
+  },
+  {
+    label: "系统 / 无衬线",
+    platform: "darwin",
+    fonts: [
+      { value: "'Helvetica Neue', Helvetica, sans-serif", label: "Helvetica Neue", detectName: "Helvetica Neue" },
+      { value: "'Trebuchet MS', sans-serif", label: "Trebuchet MS", detectName: "Trebuchet MS" },
+    ],
+  },
+  {
+    label: "系统 / 无衬线",
+    platform: "win32",
+    fonts: [
+      { value: "'Segoe UI', Tahoma, sans-serif", label: "Segoe UI", detectName: "Segoe UI" },
+      { value: "Calibri, 'Segoe UI', sans-serif", label: "Calibri", detectName: "Calibri" },
+      { value: "Bahnschrift, 'Segoe UI', sans-serif", label: "Bahnschrift", detectName: "Bahnschrift" },
+      { value: "Tahoma, Geneva, sans-serif", label: "Tahoma", detectName: "Tahoma" },
+    ],
+  },
+  {
+    label: "中文字体",
+    platform: "darwin",
+    fonts: [
+      { value: "'PingFang SC', 'Microsoft YaHei', sans-serif", label: "苹方", detectName: "PingFang SC" },
+      { value: "'Heiti SC', 'SimHei', sans-serif", label: "黑体", detectName: "Heiti SC" },
+      { value: "'Songti SC', 'SimSun', serif", label: "宋体", detectName: "Songti SC" },
+      { value: "'STKaiti', 'KaiTi', serif", label: "楷体", detectName: "STKaiti" },
+      { value: "'STFangsong', 'FangSong', serif", label: "仿宋", detectName: "STFangsong" },
+    ],
+  },
+  {
+    label: "中文字体",
+    platform: "win32",
+    fonts: [
+      { value: "'Microsoft YaHei', 'PingFang SC', sans-serif", label: "微软雅黑", detectName: "Microsoft YaHei" },
+      { value: "DengXian, 'PingFang SC', sans-serif", label: "等线体", detectName: "DengXian" },
+      { value: "SimHei, 'Heiti SC', sans-serif", label: "黑体", detectName: "SimHei" },
+      { value: "SimSun, 'Songti SC', serif", label: "宋体", detectName: "SimSun" },
+      { value: "KaiTi, 'STKaiti', serif", label: "楷体", detectName: "KaiTi" },
+      { value: "FangSong, 'STFangsong', serif", label: "仿宋", detectName: "FangSong" },
+    ],
+  },
+  {
+    label: "中文字体",
+    fonts: [
+      { value: "'Noto Sans SC', 'Source Han Sans SC', sans-serif", label: "思源黑体", detectName: "Noto Sans SC" },
+      { value: "'Noto Serif SC', 'Source Han Serif SC', serif", label: "思源宋体", detectName: "Noto Serif SC" },
+    ],
+  },
+  {
+    label: "衬线",
+    fonts: [
+      { value: "Georgia, 'Times New Roman', serif", label: "Georgia", detectName: "Georgia" },
+      { value: "'Times New Roman', Times, serif", label: "Times New Roman", detectName: "Times New Roman" },
+    ],
+  },
+  {
+    label: "衬线",
+    platform: "darwin",
+    fonts: [
+      { value: "'Palatino Linotype', Palatino, serif", label: "Palatino", detectName: "Palatino Linotype" },
+    ],
+  },
+  {
+    label: "衬线",
+    platform: "win32",
+    fonts: [
+      { value: "Cambria, Georgia, serif", label: "Cambria", detectName: "Cambria" },
+      { value: "'Palatino Linotype', Palatino, serif", label: "Palatino", detectName: "Palatino Linotype" },
+      { value: "Georgia, 'Times New Roman', serif", label: "Georgia", detectName: "Georgia" },
+    ],
+  },
+  {
+    label: "等宽",
+    platform: "darwin",
+    fonts: [
+      { value: "'SF Mono', Menlo, Consolas, monospace", label: "SF Mono", detectName: "SF Mono" },
+      { value: "Menlo, Consolas, monospace", label: "Menlo", detectName: "Menlo" },
+      { value: "Monaco, Menlo, monospace", label: "Monaco", detectName: "Monaco" },
+    ],
+  },
+  {
+    label: "等宽",
+    platform: "win32",
+    fonts: [
+      { value: "Consolas, 'Courier New', monospace", label: "Consolas", detectName: "Consolas" },
+      { value: "'Cascadia Code', Consolas, monospace", label: "Cascadia Code", detectName: "Cascadia Code" },
+      { value: "'Cascadia Mono', Consolas, monospace", label: "Cascadia Mono", detectName: "Cascadia Mono" },
+      { value: "'Lucida Console', Monaco, monospace", label: "Lucida Console", detectName: "Lucida Console" },
+    ],
+  },
+  {
+    label: "等宽",
+    fonts: [
+      { value: "'Fira Code', 'Courier New', monospace", label: "Fira Code", detectName: "Fira Code" },
+      { value: "'JetBrains Mono', Consolas, monospace", label: "JetBrains Mono", detectName: "JetBrains Mono" },
+      { value: "'Source Code Pro', Consolas, monospace", label: "Source Code Pro", detectName: "Source Code Pro" },
+      { value: "'IBM Plex Mono', Consolas, monospace", label: "IBM Plex Mono", detectName: "IBM Plex Mono" },
+    ],
+  },
+];
+
+/** 根据当前平台过滤字体数据库，返回候选分组列表 */
+function getFontCandidatesForPlatform(): FontGroup[] {
+  const platform = process.platform;
+  return FONT_DATABASE
+    .filter((group): boolean => {
+      if (!group.platform) { return true; }
+      const platforms = Array.isArray(group.platform) ? group.platform : [group.platform];
+      return platforms.includes(platform);
+    })
+    .map((group): FontGroup => ({ label: group.label, fonts: group.fonts }));
+}
+
 /** 生成阅读器面板的 HTML */
 export function getReaderHtml(
   webview: vscode.Webview,
@@ -150,45 +295,7 @@ export function getTocHtml(
         </div>
         <div class="style-control">
           <label class="style-label" for="style-font-family">字体</label>
-          <select id="style-font-family" class="style-select">
-            <optgroup label="系统 / 无衬线">
-              <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">系统默认</option>
-              <option value="Arial, Helvetica, sans-serif">Arial</option>
-              <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
-              <option value="Tahoma, Geneva, sans-serif">Tahoma</option>
-              <option value="Verdana, Geneva, sans-serif">Verdana</option>
-              <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-              <option value="'Segoe UI', Tahoma, sans-serif">Segoe UI</option>
-              <option value="system-ui, sans-serif">system-ui</option>
-            </optgroup>
-            <optgroup label="中文字体">
-              <option value="'PingFang SC', 'Microsoft YaHei', sans-serif">苹方 / 微软雅黑</option>
-              <option value="'Noto Sans SC', 'Source Han Sans SC', sans-serif">思源黑体</option>
-              <option value="'Noto Serif SC', 'Source Han Serif SC', serif">思源宋体</option>
-              <option value="'SimSun', 'Songti SC', serif">宋体</option>
-              <option value="'SimHei', 'Heiti SC', sans-serif">黑体</option>
-              <option value="'KaiTi', 'STKaiti', serif">楷体</option>
-              <option value="'FangSong', 'STFangsong', serif">仿宋</option>
-            </optgroup>
-            <optgroup label="衬线">
-              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
-              <option value="'Times New Roman', Times, serif">Times New Roman</option>
-              <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
-              <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
-              <option value="Garamond, 'Times New Roman', serif">Garamond</option>
-            </optgroup>
-            <optgroup label="等宽">
-              <option value="Menlo, Consolas, monospace">Menlo</option>
-              <option value="'Fira Code', 'Courier New', monospace">Fira Code</option>
-              <option value="'JetBrains Mono', Consolas, monospace">JetBrains Mono</option>
-              <option value="'Source Code Pro', Consolas, monospace">Source Code Pro</option>
-              <option value="'IBM Plex Mono', Consolas, monospace">IBM Plex Mono</option>
-              <option value="Consolas, 'Courier New', monospace">Consolas</option>
-            </optgroup>
-            <optgroup label="其他">
-              <option value="__custom__">自定义...</option>
-            </optgroup>
-          </select>
+          <select id="style-font-family" class="style-select"></select>
           <input type="text" id="style-font-family-custom" class="style-input" placeholder="例: 'Georgia', serif" style="display:none;" />
         </div>
         <div class="style-control">
@@ -209,7 +316,7 @@ export function getTocHtml(
   <div id="toc-root"></div>
   ${statsPanelHtml}
   <script nonce="${nonce}">
-    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, stats: stats ?? null, readingStyle: readingStyle ?? null, themeName: currentThemeName })};
+    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, stats: stats ?? null, readingStyle: readingStyle ?? null, themeName: currentThemeName, fontGroups: getFontCandidatesForPlatform() })};
   </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

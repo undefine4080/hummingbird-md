@@ -1,16 +1,28 @@
 import type { DocumentStats, Heading, ReadingStyleConfig, ThemeName } from "../../types/index.js";
 import { onMessage, postMessage } from "./messaging.js";
 
-/** window.__INITIAL_DATA__ 的类型定义 */
-interface InitialData {
+/** 字体选项（与 html-generator.ts 中 FontOption 对应） */
+interface FontOption {
+  value: string;
+  label: string;
+  detectName: string;
+}
+
+/** 字体分组（与 html-generator.ts 中 FontGroup 对应） */
+interface FontGroup {
+  label: string;
+  fonts: FontOption[];
+}
+
+/** TOC 专用的 window.__INITIAL_DATA__ 类型 */
+interface TocInitialData {
   headings: Heading[];
   theme: "light" | "dark";
   stats: DocumentStats | null;
   readingStyle: ReadingStyleConfig | null;
   themeName: ThemeName;
+  fontGroups: FontGroup[];
 }
-
-declare const __INITIAL_DATA__: InitialData;
 
 /** 当前高亮的 heading ID */
 let _activeId: string | null = null;
@@ -138,7 +150,7 @@ export function initToc(): void {
     return;
   }
 
-  const data = (window as unknown as { __INITIAL_DATA__: InitialData }).__INITIAL_DATA__;
+  const data = (window as unknown as { __INITIAL_DATA__: TocInitialData }).__INITIAL_DATA__;
   if (!data) {
     return;
   }
@@ -156,7 +168,7 @@ export function initToc(): void {
   initThemeCards(data.themeName);
 
   // 初始化阅读样式控件
-  initStyleControls(data.readingStyle);
+  initStyleControls(data.readingStyle, data.fontGroups);
 
   // 初始化文档信息面板
   if (data.stats) {
@@ -230,15 +242,103 @@ function initThemeCards(_currentThemeName: ThemeName): void {
 
 /** 默认阅读样式 */
 const DEFAULT_STYLE: ReadingStyleConfig = {
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontFamily: "system-ui, sans-serif",
   fontSize: 16,
   fontWeight: 400,
   lineHeight: 1.8,
   paragraphSpacing: 1.0,
 };
 
+/** 用 Canvas measureText 检测字体是否已安装 */
+function isFontAvailable(fontName: string): boolean {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) { return false; }
+
+  const text = "mmmmmmmmmmlli1IWwO0@#&%测试字体";
+  const baselines = ["serif", "sans-serif", "monospace"];
+
+  for (const baseline of baselines) {
+    context.font = `72px ${baseline}`;
+    const baseWidth = context.measureText(text).width;
+    context.font = `72px '${fontName}', ${baseline}`;
+    const testWidth = context.measureText(text).width;
+    if (testWidth !== baseWidth) { return true; }
+  }
+  return false;
+}
+
+/** 根据候选字体分组和已保存的字体值，动态渲染字体选择器 */
+function renderFontSelect(
+  select: HTMLSelectElement,
+  fontGroups: FontGroup[],
+  savedFontFamily: string,
+  customInput: HTMLInputElement | null,
+): void {
+  // 用 Canvas 验证每个字体是否可用，过滤不可用的
+  const verifiedGroups: Array<{ label: string; fonts: FontOption[] }> = [];
+  for (const group of fontGroups) {
+    const available = group.fonts.filter((f): boolean => isFontAvailable(f.detectName));
+    if (available.length > 0) {
+      verifiedGroups.push({ label: group.label, fonts: available });
+    }
+  }
+
+  // 合并同名分组（多个 platform 分组可能有相同 label）
+  const merged = new Map<string, FontOption[]>();
+  for (const g of verifiedGroups) {
+    const existing = merged.get(g.label);
+    if (existing) {
+      existing.push(...g.fonts);
+    } else {
+      merged.set(g.label, [...g.fonts]);
+    }
+  }
+
+  // 构建 <option> 元素
+  select.innerHTML = "";
+  const allValues = new Set<string>();
+
+  for (const [label, fonts] of merged) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = label;
+    for (const font of fonts) {
+      // 去重（同一 value 可能出现在不同平台分组中）
+      if (allValues.has(font.value)) { continue; }
+      allValues.add(font.value);
+      const option = document.createElement("option");
+      option.value = font.value;
+      option.textContent = font.label;
+      optgroup.appendChild(option);
+    }
+    if (optgroup.childElementCount > 0) {
+      select.appendChild(optgroup);
+    }
+  }
+
+  // 添加自定义选项
+  const otherGroup = document.createElement("optgroup");
+  otherGroup.label = "其他";
+  const customOption = document.createElement("option");
+  customOption.value = "__custom__";
+  customOption.textContent = "自定义...";
+  otherGroup.appendChild(customOption);
+  select.appendChild(otherGroup);
+
+  // 设置当前值
+  if (allValues.has(savedFontFamily)) {
+    select.value = savedFontFamily;
+  } else {
+    select.value = "__custom__";
+    if (customInput) {
+      customInput.value = savedFontFamily;
+      customInput.style.display = "block";
+    }
+  }
+}
+
 /** 初始化阅读样式控件 */
-function initStyleControls(savedStyle: ReadingStyleConfig | null): void {
+function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: FontGroup[]): void {
   const style = savedStyle ?? DEFAULT_STYLE;
 
   const fontSize = document.getElementById("style-font-size") as HTMLInputElement | null;
@@ -252,25 +352,14 @@ function initStyleControls(savedStyle: ReadingStyleConfig | null): void {
   const paragraphSpacing = document.getElementById("style-paragraph-spacing") as HTMLInputElement | null;
   const paragraphSpacingVal = document.getElementById("style-paragraph-spacing-val");
 
-  // 判断保存的字体是否在预设列表中
-  const isInPresetList = fontFamily && Array.from(fontFamily.options).some(
-    (opt): boolean => opt.value === style.fontFamily && opt.value !== "__custom__",
-  );
+  // 动态渲染字体选择器
+  if (fontFamily) {
+    renderFontSelect(fontFamily, fontGroups, style.fontFamily, fontFamilyCustom);
+  }
 
   // 设置初始值
   if (fontSize) { fontSize.value = String(style.fontSize); }
   if (fontSizeVal) { fontSizeVal.textContent = String(style.fontSize); }
-  if (fontFamily) {
-    if (isInPresetList) {
-      fontFamily.value = style.fontFamily;
-    } else {
-      fontFamily.value = "__custom__";
-      if (fontFamilyCustom) {
-        fontFamilyCustom.value = style.fontFamily;
-        fontFamilyCustom.style.display = "block";
-      }
-    }
-  }
   if (fontWeight) { fontWeight.value = String(style.fontWeight); }
   if (fontWeightVal) { fontWeightVal.textContent = String(style.fontWeight); }
   if (lineHeight) { lineHeight.value = String(style.lineHeight); }
