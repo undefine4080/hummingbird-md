@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import { parseMarkdown } from "../markdown/parser.js";
-import type { FontConfig, Heading, Theme } from "../types/index.js";
+import type { DocumentStats, FontConfig, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
 import type { MessageProtocol } from "../types/index.js";
+import { computeDocStats } from "../utils/doc-stats.js";
 import { getReaderHtml } from "./html-generator.js";
 
 /** 阅读器面板配置键 */
 const FONT_CONFIG_KEY = "hummingbird-md.fontConfig";
+const STYLE_CONFIG_KEY = "hummingbird-md.readingStyle";
 
 /** 获取当前 VSCode 主题 */
 function getTheme(): Theme {
@@ -31,7 +33,7 @@ export class ReaderPanel {
   private onHeadingChanged: ((id: string) => void) | null = null;
 
   /** 标题加载完成回调，通知 TOC 侧边栏更新目录树 */
-  private onHeadingsLoaded: ((headings: Heading[], theme: Theme) => void) | null = null;
+  private onHeadingsLoaded: ((headings: Heading[], theme: Theme, stats: DocumentStats) => void) | null = null;
 
   /** VSCode 主题变化监听器的 Disposable */
   private themeChangeListener: vscode.Disposable;
@@ -41,6 +43,12 @@ export class ReaderPanel {
 
   /** 拷贝 context 引用，用于存取 globalState */
   private readonly context: vscode.ExtensionContext;
+
+  /** 当前阅读样式配置 */
+  private styleConfig: ReadingStyleConfig | null = null;
+
+  /** 当前主题风格名称 */
+  private currentThemeName: ThemeName = "classic";
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -106,7 +114,7 @@ export class ReaderPanel {
   }
 
   /** 设置标题加载完成回调 */
-  public setOnHeadingsLoaded(callback: (headings: Heading[], theme: Theme) => void): void {
+  public setOnHeadingsLoaded(callback: (headings: Heading[], theme: Theme, stats: DocumentStats) => void): void {
     this.onHeadingsLoaded = callback;
   }
 
@@ -119,6 +127,29 @@ export class ReaderPanel {
   /** 应用主题（从 TOC 侧边栏触发） */
   public applyTheme(theme: Theme): void {
     this.postMessage({ type: "updateTheme", data: { theme } });
+  }
+
+  /** 设置阅读样式配置（面板创建时和样式变更时调用） */
+  public setStyleConfig(config: ReadingStyleConfig): void {
+    this.styleConfig = config;
+  }
+
+  /** 应用阅读样式（从 TOC 侧边栏实时触发） */
+  public applyStyle(config: ReadingStyleConfig): void {
+    this.styleConfig = config;
+    this.postMessage({ type: "updateStyle", data: config });
+    void this.saveStyleConfig(config);
+  }
+
+  /** 设置主题风格名称 */
+  public setThemeName(name: ThemeName): void {
+    this.currentThemeName = name;
+  }
+
+  /** 应用主题风格（从 TOC 侧边栏触发） */
+  public applyThemeName(name: ThemeName): void {
+    this.currentThemeName = name;
+    this.postMessage({ type: "updateThemeName", data: { themeName: name } });
   }
 
   /** 更新文档内容（重新加载 Markdown） */
@@ -143,12 +174,23 @@ export class ReaderPanel {
   /** 加载并渲染文档 */
   public async loadAndRender(): Promise<void> {
     console.log("[HummingbirdMD] 开始加载文档:", this.currentUri.path);
-    const content = await vscode.workspace.fs.readFile(this.currentUri);
+    const [content, fileStat] = await Promise.all([
+      vscode.workspace.fs.readFile(this.currentUri),
+      vscode.workspace.fs.stat(this.currentUri),
+    ]);
     const source = new TextDecoder("utf-8").decode(content);
     console.log("[HummingbirdMD] 文件读取完成，长度:", source.length);
 
     const doc = await parseMarkdown(source);
     console.log("[HummingbirdMD] Markdown 解析完成，标题数:", doc.headings.length);
+
+    const stats = computeDocStats(
+      source,
+      fileStat.size,
+      fileStat.ctime,
+      fileStat.mtime,
+      this.currentUri.fsPath,
+    );
 
     const theme = getTheme();
     this.panel.webview.html = getReaderHtml(
@@ -157,11 +199,13 @@ export class ReaderPanel {
       doc.html,
       doc.headings,
       theme,
+      this.styleConfig ?? undefined,
+      this.currentThemeName,
     );
     console.log("[HummingbirdMD] HTML 已设置到 webview");
 
     console.log("[HummingbirdMD] onHeadingsLoaded 回调是否存在:", !!this.onHeadingsLoaded);
-    this.onHeadingsLoaded?.(doc.headings, theme);
+    this.onHeadingsLoaded?.(doc.headings, theme, stats);
   }
 
   /** 处理来自 Webview 的消息 */
@@ -181,6 +225,14 @@ export class ReaderPanel {
         void this.saveFontConfig(message.data);
         break;
 
+      case "styleChanged":
+        // 样式变更由 TOC 侧边栏发起，Reader 不直接处理
+        break;
+
+      case "themeNameChanged":
+        // 主题名称变更由 TOC 侧边栏发起，Reader 不直接处理
+        break;
+
       case "ready":
         // 面板就绪
         break;
@@ -194,6 +246,11 @@ export class ReaderPanel {
   /** 保存字体配置到 globalState */
   private async saveFontConfig(config: FontConfig): Promise<void> {
     await this.context.globalState.update(FONT_CONFIG_KEY, config);
+  }
+
+  /** 保存阅读样式配置到 globalState */
+  private async saveStyleConfig(config: ReadingStyleConfig): Promise<void> {
+    await this.context.globalState.update(STYLE_CONFIG_KEY, config);
   }
 
   /** 向 Webview 发送消息 */

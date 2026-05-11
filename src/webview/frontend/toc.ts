@@ -1,10 +1,13 @@
-import type { Heading } from "../../types/index.js";
+import type { DocumentStats, Heading, ReadingStyleConfig, ThemeName } from "../../types/index.js";
 import { onMessage, postMessage } from "./messaging.js";
 
 /** window.__INITIAL_DATA__ 的类型定义 */
 interface InitialData {
   headings: Heading[];
   theme: "light" | "dark";
+  stats: DocumentStats | null;
+  readingStyle: ReadingStyleConfig | null;
+  themeName: ThemeName;
 }
 
 declare const __INITIAL_DATA__: InitialData;
@@ -118,8 +121,11 @@ function setupMessageListeners(): void {
       case "updateTheme":
         updateTheme(message.data.theme);
         break;
+      case "updateStyle":
+        break;
+      case "updateThemeName":
+        break;
       case "init":
-        // TOC 侧边栏不处理 init 消息
         break;
     }
   });
@@ -145,6 +151,17 @@ export function initToc(): void {
 
   // 初始化设置面板
   initSettingsPanel(data.theme);
+
+  // 初始化主题风格选择
+  initThemeCards(data.themeName);
+
+  // 初始化阅读样式控件
+  initStyleControls(data.readingStyle);
+
+  // 初始化文档信息面板
+  if (data.stats) {
+    initDocStatsPanel(data.stats);
+  }
 
   // 注册消息监听
   setupMessageListeners();
@@ -181,4 +198,193 @@ function initSettingsPanel(currentTheme: string): void {
     setActiveThemeBtn("dark");
     postMessage({ type: "themeChanged", data: { theme: "dark" } });
   });
+}
+
+/** 初始化主题风格卡片选择 */
+function initThemeCards(_currentThemeName: ThemeName): void {
+  const group = document.getElementById("theme-card-group");
+  if (!group) {
+    return;
+  }
+
+  group.addEventListener("click", (e: MouseEvent): void => {
+    const target = e.target as HTMLElement;
+    const card = target.closest<HTMLElement>(".theme-card");
+    if (!card?.dataset.themeName) {
+      return;
+    }
+    const name = card.dataset.themeName as ThemeName;
+
+    // 更新 UI 高亮
+    group.querySelectorAll(".theme-card").forEach((el): void => {
+      el.classList.toggle("active", el === card);
+    });
+
+    // 更新当前页面主题变量
+    document.documentElement.dataset.themeName = name;
+
+    // 发送消息
+    postMessage({ type: "themeNameChanged", data: { themeName: name } });
+  });
+}
+
+/** 默认阅读样式 */
+const DEFAULT_STYLE: ReadingStyleConfig = {
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontSize: 16,
+  fontWeight: 400,
+  lineHeight: 1.8,
+  paragraphSpacing: 1.0,
+};
+
+/** 初始化阅读样式控件 */
+function initStyleControls(savedStyle: ReadingStyleConfig | null): void {
+  const style = savedStyle ?? DEFAULT_STYLE;
+
+  const fontSize = document.getElementById("style-font-size") as HTMLInputElement | null;
+  const fontSizeVal = document.getElementById("style-font-size-val");
+  const fontFamily = document.getElementById("style-font-family") as HTMLSelectElement | null;
+  const fontFamilyCustom = document.getElementById("style-font-family-custom") as HTMLInputElement | null;
+  const fontWeight = document.getElementById("style-font-weight") as HTMLInputElement | null;
+  const fontWeightVal = document.getElementById("style-font-weight-val");
+  const lineHeight = document.getElementById("style-line-height") as HTMLInputElement | null;
+  const lineHeightVal = document.getElementById("style-line-height-val");
+  const paragraphSpacing = document.getElementById("style-paragraph-spacing") as HTMLInputElement | null;
+  const paragraphSpacingVal = document.getElementById("style-paragraph-spacing-val");
+
+  // 判断保存的字体是否在预设列表中
+  const isInPresetList = fontFamily && Array.from(fontFamily.options).some(
+    (opt): boolean => opt.value === style.fontFamily && opt.value !== "__custom__",
+  );
+
+  // 设置初始值
+  if (fontSize) { fontSize.value = String(style.fontSize); }
+  if (fontSizeVal) { fontSizeVal.textContent = String(style.fontSize); }
+  if (fontFamily) {
+    if (isInPresetList) {
+      fontFamily.value = style.fontFamily;
+    } else {
+      fontFamily.value = "__custom__";
+      if (fontFamilyCustom) {
+        fontFamilyCustom.value = style.fontFamily;
+        fontFamilyCustom.style.display = "block";
+      }
+    }
+  }
+  if (fontWeight) { fontWeight.value = String(style.fontWeight); }
+  if (fontWeightVal) { fontWeightVal.textContent = String(style.fontWeight); }
+  if (lineHeight) { lineHeight.value = String(style.lineHeight); }
+  if (lineHeightVal) { lineHeightVal.textContent = String(style.lineHeight); }
+  if (paragraphSpacing) { paragraphSpacing.value = String(style.paragraphSpacing); }
+  if (paragraphSpacingVal) { paragraphSpacingVal.textContent = String(style.paragraphSpacing); }
+
+  /** 获取当前生效的字体值 */
+  const getCurrentFontFamily = (): string => {
+    if (fontFamily?.value === "__custom__") {
+      return fontFamilyCustom?.value.trim() || DEFAULT_STYLE.fontFamily;
+    }
+    return fontFamily?.value ?? DEFAULT_STYLE.fontFamily;
+  };
+
+  /** 收集当前样式配置并发送消息 */
+  const emitStyleChange = (): void => {
+    postMessage({
+      type: "styleChanged",
+      data: {
+        fontFamily: getCurrentFontFamily(),
+        fontSize: Number(fontSize?.value ?? DEFAULT_STYLE.fontSize),
+        fontWeight: Number(fontWeight?.value ?? DEFAULT_STYLE.fontWeight),
+        lineHeight: Number(lineHeight?.value ?? DEFAULT_STYLE.lineHeight),
+        paragraphSpacing: Number(paragraphSpacing?.value ?? DEFAULT_STYLE.paragraphSpacing),
+      },
+    });
+  };
+
+  // 绑定滑块事件
+  fontSize?.addEventListener("input", (): void => {
+    if (fontSizeVal) { fontSizeVal.textContent = fontSize.value; }
+    emitStyleChange();
+  });
+  fontFamily?.addEventListener("change", (): void => {
+    if (fontFamily.value === "__custom__") {
+      if (fontFamilyCustom) {
+        fontFamilyCustom.style.display = "block";
+        fontFamilyCustom.focus();
+      }
+    } else {
+      if (fontFamilyCustom) { fontFamilyCustom.style.display = "none"; }
+      emitStyleChange();
+    }
+  });
+  fontFamilyCustom?.addEventListener("input", (): void => {
+    emitStyleChange();
+  });
+  fontWeight?.addEventListener("input", (): void => {
+    if (fontWeightVal) { fontWeightVal.textContent = fontWeight.value; }
+    emitStyleChange();
+  });
+  lineHeight?.addEventListener("input", (): void => {
+    if (lineHeightVal) { lineHeightVal.textContent = lineHeight.value; }
+    emitStyleChange();
+  });
+  paragraphSpacing?.addEventListener("input", (): void => {
+    if (paragraphSpacingVal) { paragraphSpacingVal.textContent = paragraphSpacing.value; }
+    emitStyleChange();
+  });
+}
+
+/** 初始化文档信息面板 */
+function initDocStatsPanel(stats: DocumentStats): void {
+  const toggle = document.getElementById("doc-stats-toggle");
+  const arrow = document.getElementById("doc-stats-arrow");
+  const body = document.getElementById("doc-stats-body");
+  const grid = document.getElementById("doc-stats-grid");
+
+  if (!toggle || !arrow || !body || !grid) {
+    return;
+  }
+
+  // 折叠/展开
+  toggle.addEventListener("click", (): void => {
+    const isOpen = body.classList.toggle("open");
+    arrow.classList.toggle("open", isOpen);
+  });
+
+  // 渲染统计项
+  const items: Array<{ label: string; value: string; full?: boolean; copyable?: boolean }> = [
+    { label: "字数", value: String(stats.wordCount) },
+    { label: "字符数", value: String(stats.charCount) },
+    { label: "段落数", value: String(stats.paragraphCount) },
+    { label: "文件大小", value: stats.fileSize },
+    { label: "文件路径", value: stats.filePath, full: true, copyable: true },
+    { label: "创建日期", value: stats.createdDate },
+    { label: "修改日期", value: stats.modifiedDate },
+  ];
+
+  const fragment = document.createDocumentFragment();
+  for (const item of items) {
+    const el = document.createElement("div");
+    el.className = "stat-item" + (item.full ? " stat-item-full" : "");
+    el.innerHTML = `<span class="stat-label">${item.label}</span><span class="stat-value${item.copyable ? " stat-path" : ""}" title="${item.copyable ? "点击复制" : item.value}">${item.value}</span>`;
+
+    if (item.copyable) {
+      const valueEl = el.querySelector<HTMLElement>(".stat-value");
+      valueEl?.addEventListener("click", (): void => {
+        void navigator.clipboard.writeText(item.value).then((): void => {
+          if (valueEl) {
+            valueEl.classList.add("copied");
+            const orig = valueEl.textContent ?? "";
+            valueEl.textContent = "已复制";
+            setTimeout((): void => {
+              valueEl.classList.remove("copied");
+              valueEl.textContent = orig;
+            }, 1500);
+          }
+        });
+      });
+    }
+
+    fragment.appendChild(el);
+  }
+  grid.appendChild(fragment);
 }

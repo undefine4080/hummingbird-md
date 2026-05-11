@@ -20,19 +20,41 @@ export interface ParsedDocument {
   headings: Heading[];
 }
 
+/** 文档统计信息 */
+export interface DocumentStats {
+  /** 字数（中文字符 + 英文单词） */
+  wordCount: number;
+  /** 字符数（含标点和空格） */
+  charCount: number;
+  /** 段落数 */
+  paragraphCount: number;
+  /** 格式化的文件大小 */
+  fileSize: string;
+  /** 文件绝对路径 */
+  filePath: string;
+  /** 创建日期 */
+  createdDate: string;
+  /** 修改日期 */
+  modifiedDate: string;
+}
+
 /** Webview 与插件之间的消息协议 */
 export namespace MessageProtocol {
   /** 插件 → Webview 的消息 */
   export type ToWebview =
     | { type: "init"; data: { html: string; headings: Heading[]; theme: Theme } }
     | { type: "updateTheme"; data: { theme: Theme } }
-    | { type: "highlightHeading"; data: { id: string } };
+    | { type: "highlightHeading"; data: { id: string } }
+    | { type: "updateStyle"; data: ReadingStyleConfig }
+    | { type: "updateThemeName"; data: { themeName: ThemeName } };
 
   /** Webview → 插件的消息 */
   export type ToExtension =
     | { type: "headingChanged"; data: { id: string } }
     | { type: "themeChanged"; data: { theme: Theme } }
     | { type: "fontChanged"; data: { fontFamily: string; fontSize: number; fontWeight: number } }
+    | { type: "styleChanged"; data: ReadingStyleConfig }
+    | { type: "themeNameChanged"; data: { themeName: ThemeName } }
     | { type: "openMermaidFullscreen"; data: { source: string } }
     | { type: "ready" };
 
@@ -47,4 +69,16 @@ export interface FontConfig {
   fontWeight: number;
 }
 
+/** 阅读样式配置 */
+export interface ReadingStyleConfig {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: number;
+  lineHeight: number;
+  paragraphSpacing: number;
+}
+
 export type Theme = "light" | "dark";
+
+/** 主题风格名称 */
+export type ThemeName = "classic" | "github" | "vue" | "minimal";

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { Heading, Theme } from "../types/index.js";
+import type { DocumentStats, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
 import type { MessageProtocol } from "../types/index.js";
 import { getTocHtml } from "./html-generator.js";
 
@@ -23,11 +23,26 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 缓存的主题，配合 pendingHeadings 使用 */
   private pendingTheme: Theme | null = null;
 
+  /** 缓存的文档统计信息 */
+  private pendingStats: DocumentStats | null = null;
+
+  /** 缓存的阅读样式配置 */
+  private pendingStyleConfig: ReadingStyleConfig | null = null;
+
+  /** 缓存的主题风格名称 */
+  private pendingThemeName: ThemeName = "classic";
+
   /** 标题点击回调，通知 ReaderPanel 滚动到对应位置 */
   private onHeadingClicked: ((id: string) => void) | null = null;
 
   /** 主题变更回调，通知 ReaderPanel 切换主题 */
   private onThemeChanged: ((theme: Theme) => void) | null = null;
+
+  /** 阅读样式变更回调，通知 ReaderPanel 应用样式 */
+  private onStyleChanged: ((config: ReadingStyleConfig) => void) | null = null;
+
+  /** 主题风格变更回调，通知 ReaderPanel 切换主题 */
+  private onThemeNameChanged: ((name: ThemeName) => void) | null = null;
 
   /** 消息监听器 */
   private messageListener: vscode.Disposable | null = null;
@@ -44,6 +59,26 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 设置主题变更回调 */
   public setOnThemeChanged(callback: (theme: Theme) => void): void {
     this.onThemeChanged = callback;
+  }
+
+  /** 设置阅读样式变更回调 */
+  public setOnStyleChanged(callback: (config: ReadingStyleConfig) => void): void {
+    this.onStyleChanged = callback;
+  }
+
+  /** 设置主题风格变更回调 */
+  public setOnThemeNameChanged(callback: (name: ThemeName) => void): void {
+    this.onThemeNameChanged = callback;
+  }
+
+  /** 设置当前阅读样式配置（用于 HTML 生成） */
+  public setStyleConfig(config: ReadingStyleConfig): void {
+    this.pendingStyleConfig = config;
+  }
+
+  /** 设置当前主题风格名称（用于 HTML 生成） */
+  public setThemeName(name: ThemeName): void {
+    this.pendingThemeName = name;
   }
 
   /** WebviewViewProvider 接口实现：解析 WebviewView */
@@ -65,6 +100,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
         this.extensionUri,
         this.pendingHeadings,
         this.pendingTheme,
+        this.pendingStats ?? undefined,
+        this.pendingStyleConfig ?? undefined,
+        this.pendingThemeName,
       );
     } else {
       this.view.webview.html = this.getEmptyHtml();
@@ -80,12 +118,13 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   }
 
   /** 更新 TOC 内容（当文档加载或切换时调用） */
-  public updateHeadings(headings: Heading[], theme: Theme): void {
+  public updateHeadings(headings: Heading[], theme: Theme, stats?: DocumentStats): void {
     console.log("[HummingbirdMD TOC] updateHeadings 被调用，标题数:", headings.length, "view 是否存在:", !!this.view);
 
     // 缓存数据，供 resolveWebviewView 使用
     this.pendingHeadings = headings;
     this.pendingTheme = theme;
+    this.pendingStats = stats ?? null;
 
     if (!this.view) {
       console.log("[HummingbirdMD TOC] view 为 null，已缓存数据，等待 view 就绪");
@@ -97,6 +136,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
       this.extensionUri,
       headings,
       theme,
+      stats,
+      this.pendingStyleConfig ?? undefined,
+      this.pendingThemeName,
     );
     console.log("[HummingbirdMD TOC] HTML 已设置到 TOC webview");
   }
@@ -133,6 +175,15 @@ export class TocSidebar implements vscode.WebviewViewProvider {
 
       case "fontChanged":
       case "openMermaidFullscreen":
+        break;
+
+      case "styleChanged":
+        this.onStyleChanged?.(message.data);
+        break;
+
+      case "themeNameChanged":
+        this.pendingThemeName = message.data.themeName;
+        this.onThemeNameChanged?.(message.data.themeName);
         break;
     }
   }

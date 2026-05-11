@@ -1,10 +1,11 @@
 import mermaid from "mermaid";
-import type { Theme } from "../../types/index.js";
+import type { ReadingStyleConfig, Theme } from "../../types/index.js";
 
 /** window.__INITIAL_DATA__ 的类型声明 */
 interface InitialData {
   headings: unknown;
   theme: Theme;
+  readingStyle: ReadingStyleConfig | null;
 }
 
 declare global {
@@ -34,6 +35,9 @@ interface ViewerState {
   pinchStartDistance: number;
   pinchStartScale: number;
 }
+
+/** 缓存 mermaid 版本号 */
+let mermaidVersion = "unknown";
 
 /** 当前全屏展示的图表索引（-1 表示未展示） */
 let currentDiagramIndex = -1;
@@ -67,6 +71,10 @@ function initMermaidConfig(): void {
     theme: getMermaidThemeName(),
     securityLevel: "loose",
   });
+  const v = (mermaid as unknown as Record<string, unknown>).version;
+  if (typeof v === "string") {
+    mermaidVersion = v;
+  }
 }
 
 /**
@@ -420,21 +428,71 @@ function bindOverlayEvents(): void {
 }
 
 /**
+ * 复制文本到剪贴板并在按钮上显示反馈
+ */
+async function copyWithFeedback(text: string, btn: HTMLButtonElement): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    const originalHtml = btn.innerHTML;
+    btn.classList.add("copied");
+    btn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg><span>已复制</span>';
+    setTimeout((): void => {
+      btn.classList.remove("copied");
+      btn.innerHTML = originalHtml;
+    }, 1500);
+  } catch {
+    // clipboard API 不可用时静默失败
+  }
+}
+
+/**
  * 创建 mermaid 渲染失败的错误展示元素
  */
 function createErrorElement(source: string, errorMessage: string): HTMLDivElement {
   const container = document.createElement("div");
   container.className = "mermaid-container mermaid-error";
 
-  // 错误标题
-  const titleEl = document.createElement("div");
+  // 标题行 + 操作按钮
+  const headerEl = document.createElement("div");
+  headerEl.className = "mermaid-error-header";
+
+  const titleEl = document.createElement("span");
   titleEl.className = "mermaid-error-title";
   titleEl.textContent = "Mermaid 语法解析失败";
-  container.appendChild(titleEl);
+  headerEl.appendChild(titleEl);
+
+  const actionsEl = document.createElement("div");
+  actionsEl.className = "mermaid-error-actions";
+
+  // 复制报错信息按钮
+  const copyErrorBtn = document.createElement("button");
+  copyErrorBtn.className = "mermaid-error-btn";
+  copyErrorBtn.title = "复制报错信息（含 Mermaid 版本号）";
+  copyErrorBtn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg><span>复制报错</span>';
+  copyErrorBtn.addEventListener("click", (e: Event): void => {
+    e.stopPropagation();
+    const text = `Mermaid v${mermaidVersion}\nError: ${errorMessage}`;
+    void copyWithFeedback(text, copyErrorBtn);
+  });
+  actionsEl.appendChild(copyErrorBtn);
+
+  // 复制源码按钮
+  const copySourceBtn = document.createElement("button");
+  copySourceBtn.className = "mermaid-error-btn";
+  copySourceBtn.title = "复制 Mermaid 源代码";
+  copySourceBtn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg><span>复制代码</span>';
+  copySourceBtn.addEventListener("click", (e: Event): void => {
+    e.stopPropagation();
+    void copyWithFeedback(source, copySourceBtn);
+  });
+  actionsEl.appendChild(copySourceBtn);
+
+  headerEl.appendChild(actionsEl);
+  container.appendChild(headerEl);
 
   // 详细错误信息
   const errorEl = document.createElement("div");
-  errorEl.style.cssText = "color: #e74c3c; font-size: 13px; margin-bottom: 12px;";
+  errorEl.className = "mermaid-error-message";
   errorEl.textContent = errorMessage;
   container.appendChild(errorEl);
 
@@ -442,7 +500,6 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
   const details = document.createElement("details");
   const summary = document.createElement("summary");
   summary.textContent = "查看原始代码";
-  summary.style.cssText = "cursor: pointer; font-size: 13px; color: #e74c3c; margin-bottom: 8px;";
   details.appendChild(summary);
 
   const pre = document.createElement("pre");

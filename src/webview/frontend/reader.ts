@@ -4,7 +4,7 @@
  * 负责：滚动检测（Intersection Observer）、字体配置、主题切换、Heading 高亮。
  */
 
-import type { FontConfig, MessageProtocol, Theme } from "../../types/index.js";
+import type { FontConfig, MessageProtocol, ReadingStyleConfig, Theme } from "../../types/index.js";
 import { onMessage, postMessage } from "./messaging.js";
 
 type ToWebview = MessageProtocol.ToWebview;
@@ -29,6 +29,13 @@ let _detachMessageListener: (() => void) | null = null;
 export function initReader(): void {
   setupHeadingObserver();
   setupMessageListeners();
+  initCodeBlockCopy();
+
+  // 应用保存的阅读样式配置
+  const data = window.__INITIAL_DATA__;
+  if (data?.readingStyle) {
+    applyReadingStyle(data.readingStyle);
+  }
 }
 
 /** 使用 Intersection Observer 检测当前可见的 heading */
@@ -96,6 +103,12 @@ function handleMessage(message: ToWebview): void {
     case "updateTheme":
       // 主题切换由 reader-entry.ts 统一处理（含 mermaid 重渲染）
       break;
+    case "updateStyle":
+      applyReadingStyle(message.data);
+      break;
+    case "updateThemeName":
+      document.documentElement.dataset.themeName = message.data.themeName;
+      break;
     case "highlightHeading":
       scrollToHeading(message.data.id);
       break;
@@ -117,6 +130,16 @@ export function applyFontConfig(config: FontConfig): void {
   root.style.setProperty("--hb-font-family", config.fontFamily);
   root.style.setProperty("--hb-font-size", `${config.fontSize}px`);
   root.style.setProperty("--hb-font-weight", `${config.fontWeight}`);
+}
+
+/** 应用阅读样式配置 */
+export function applyReadingStyle(config: ReadingStyleConfig): void {
+  const root = document.documentElement;
+  root.style.setProperty("--hb-font-family", config.fontFamily);
+  root.style.setProperty("--hb-font-size", `${config.fontSize}px`);
+  root.style.setProperty("--hb-font-weight", `${config.fontWeight}`);
+  root.style.setProperty("--hb-line-height", String(config.lineHeight));
+  root.style.setProperty("--hb-paragraph-spacing", `${config.paragraphSpacing}em`);
 }
 
 /**
@@ -149,4 +172,41 @@ function scrollToHeading(id: string): void {
   setTimeout((): void => {
     target.classList.remove("heading-highlight");
   }, 2000);
+}
+
+/** 复制图标 SVG */
+const COPY_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>';
+
+/** 成功图标 SVG */
+const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
+
+/** 为所有代码块添加复制按钮 */
+function initCodeBlockCopy(): void {
+  const blocks = document.querySelectorAll<HTMLElement>("#reader-content pre");
+  blocks.forEach((pre: HTMLElement): void => {
+    // 跳过 mermaid 容器
+    if (pre.classList.contains("mermaid")) {
+      return;
+    }
+
+    const btn = document.createElement("button");
+    btn.className = "code-copy-btn";
+    btn.title = "复制代码";
+    btn.innerHTML = COPY_ICON;
+
+    btn.addEventListener("click", (): void => {
+      const code = pre.querySelector("code");
+      const text = code?.textContent ?? pre.textContent ?? "";
+      void navigator.clipboard.writeText(text).then((): void => {
+        btn.innerHTML = CHECK_ICON;
+        btn.classList.add("copied");
+        setTimeout((): void => {
+          btn.innerHTML = COPY_ICON;
+          btn.classList.remove("copied");
+        }, 1500);
+      });
+    });
+
+    pre.appendChild(btn);
+  });
 }

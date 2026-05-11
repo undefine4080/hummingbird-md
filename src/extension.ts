@@ -1,8 +1,28 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands/register.js";
+import type { ReadingStyleConfig, ThemeName } from "./types/index.js";
 import { ReaderPanel } from "./webview/reader-panel.js";
 import { TocSidebar } from "./webview/toc-sidebar.js";
 import { initHighlighter } from "./markdown/parser.js";
+
+/** 阅读样式配置存储 key */
+const STYLE_CONFIG_KEY = "hummingbird-md.readingStyle";
+const THEME_NAME_KEY = "hummingbird-md.themeName";
+
+/** 默认阅读样式配置 */
+const DEFAULT_STYLE: ReadingStyleConfig = {
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontSize: 16,
+  fontWeight: 400,
+  lineHeight: 1.8,
+  paragraphSpacing: 1.0,
+};
+
+/** 当前阅读样式配置 */
+let currentStyle: ReadingStyleConfig = { ...DEFAULT_STYLE };
+
+/** 当前主题风格名称 */
+let currentThemeName: ThemeName = "classic";
 
 /** 活跃的阅读器面板，key 为文档 URI 路径 */
 const activePanels = new Map<string, ReaderPanel>();
@@ -14,8 +34,23 @@ let tocSidebar: TocSidebar;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   // 初始化 Shiki 语法高亮引擎
   await initHighlighter();
+
+  // 加载保存的阅读样式配置
+  const savedStyle = context.globalState.get<ReadingStyleConfig>(STYLE_CONFIG_KEY);
+  if (savedStyle) {
+    currentStyle = savedStyle;
+  }
+
+  // 加载保存的主题风格
+  const savedThemeName = context.globalState.get<ThemeName>(THEME_NAME_KEY);
+  if (savedThemeName) {
+    currentThemeName = savedThemeName;
+  }
+
   // 注册 TOC 侧边栏 Provider
   tocSidebar = new TocSidebar(context.extensionUri);
+  tocSidebar.setStyleConfig(currentStyle);
+  tocSidebar.setThemeName(currentThemeName);
 
   // 设置 TOC 侧边栏标题点击回调：通知活跃的 ReaderPanel 滚动
   tocSidebar.setOnHeadingClicked((id: string): void => {
@@ -47,6 +82,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   tocSidebar.setOnThemeChanged((theme: string): void => {
     for (const panel of activePanels.values()) {
       panel.applyTheme(theme as "light" | "dark");
+    }
+  });
+
+  // 设置 TOC 侧边栏阅读样式变更回调：通知所有 ReaderPanel 应用样式
+  tocSidebar.setOnStyleChanged((config: ReadingStyleConfig): void => {
+    currentStyle = config;
+    void context.globalState.update(STYLE_CONFIG_KEY, config);
+    tocSidebar.setStyleConfig(config);
+    for (const panel of activePanels.values()) {
+      panel.applyStyle(config);
+    }
+  });
+
+  // 设置 TOC 侧边栏主题风格变更回调
+  tocSidebar.setOnThemeNameChanged((name: ThemeName): void => {
+    currentThemeName = name;
+    void context.globalState.update(THEME_NAME_KEY, name);
+    tocSidebar.setThemeName(name);
+    for (const panel of activePanels.values()) {
+      panel.applyThemeName(name);
     }
   });
 
@@ -95,10 +150,14 @@ async function openReader(
     tocSidebar.highlightHeading(id);
   });
 
-  panel.setOnHeadingsLoaded((headings, theme): void => {
+  panel.setOnHeadingsLoaded((headings, theme, stats): void => {
     console.log("[HummingbirdMD] onHeadingsLoaded 回调触发，标题数:", headings.length);
-    tocSidebar.updateHeadings(headings, theme);
+    tocSidebar.updateHeadings(headings, theme, stats);
   });
+
+  // 设置当前阅读样式
+  panel.setStyleConfig(currentStyle);
+  panel.setThemeName(currentThemeName);
 
   await panel.loadAndRender();
 
