@@ -81,4 +81,19 @@ export interface ReadingStyleConfig {
 export type Theme = "light" | "dark";
 
 /** 主题风格名称 */
-export type ThemeName = "classic" | "github" | "vue" | "minimal";
+export type ThemeName =
+  | "classic"
+  | "github"
+  | "vue"
+  | "minimal"
+  | "dracula"
+  | "solarized"
+  | "nord"
+  | "gruvbox"
+  | "catppuccin"
+  | "everforest"
+  | "rose-pine"
+  | "one-dark"
+  | "notion"
+  | "ayu"
+  | "flexoki";

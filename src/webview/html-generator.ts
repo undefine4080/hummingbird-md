@@ -130,6 +130,17 @@ export function getTocHtml(
         <button class="theme-card${currentThemeName === "github" ? " active" : ""}" data-theme-name="github"><span class="theme-card-dot" style="background: #0969da;"></span>GitHub</button>
         <button class="theme-card${currentThemeName === "vue" ? " active" : ""}" data-theme-name="vue"><span class="theme-card-dot" style="background: #42b883;"></span>Vue</button>
         <button class="theme-card${currentThemeName === "minimal" ? " active" : ""}" data-theme-name="minimal"><span class="theme-card-dot" style="background: #666;"></span>Minimal</button>
+        <button class="theme-card${currentThemeName === "dracula" ? " active" : ""}" data-theme-name="dracula"><span class="theme-card-dot" style="background: #bd93f9;"></span>Dracula</button>
+        <button class="theme-card${currentThemeName === "solarized" ? " active" : ""}" data-theme-name="solarized"><span class="theme-card-dot" style="background: #268bd2;"></span>Solarized</button>
+        <button class="theme-card${currentThemeName === "nord" ? " active" : ""}" data-theme-name="nord"><span class="theme-card-dot" style="background: #88c0d0;"></span>Nord</button>
+        <button class="theme-card${currentThemeName === "gruvbox" ? " active" : ""}" data-theme-name="gruvbox"><span class="theme-card-dot" style="background: #fe8019;"></span>Gruvbox</button>
+        <button class="theme-card${currentThemeName === "catppuccin" ? " active" : ""}" data-theme-name="catppuccin"><span class="theme-card-dot" style="background: #cba6f7;"></span>Catppuccin</button>
+        <button class="theme-card${currentThemeName === "everforest" ? " active" : ""}" data-theme-name="everforest"><span class="theme-card-dot" style="background: #7fbbb3;"></span>Everforest</button>
+        <button class="theme-card${currentThemeName === "rose-pine" ? " active" : ""}" data-theme-name="rose-pine"><span class="theme-card-dot" style="background: #c4a7e7;"></span>Rosé Pine</button>
+        <button class="theme-card${currentThemeName === "one-dark" ? " active" : ""}" data-theme-name="one-dark"><span class="theme-card-dot" style="background: #61afef;"></span>One Dark</button>
+        <button class="theme-card${currentThemeName === "notion" ? " active" : ""}" data-theme-name="notion"><span class="theme-card-dot" style="background: #2383e2;"></span>Notion</button>
+        <button class="theme-card${currentThemeName === "ayu" ? " active" : ""}" data-theme-name="ayu"><span class="theme-card-dot" style="background: #e6b450;"></span>Ayu</button>
+        <button class="theme-card${currentThemeName === "flexoki" ? " active" : ""}" data-theme-name="flexoki"><span class="theme-card-dot" style="background: #5e9af0;"></span>Flexoki</button>
       </div>
       <div class="settings-section-label" style="margin-top: 12px;">阅读样式</div>
       <div class="settings-style-group">
@@ -259,6 +270,50 @@ function getReaderStyles(): string {
     /* Minimal 主题 */
     [data-theme-name="minimal"] { --bg-primary: #ffffff; --bg-secondary: #fafafa; --text-primary: #333333; --text-secondary: #999999; --border-color: #e0e0e0; --accent-color: #333333; --code-bg: #f0f0f0; --code-text: #555555; --blockquote-border: #999999; --table-stripe: #fafafa; --shadow: rgba(0,0,0,0.08); --overlay-bg: #ffffff; --overlay-toolbar-bg: rgba(255,255,255,0.95); --overlay-btn-border: rgba(0,0,0,0.12); --overlay-btn-text: #333; --overlay-btn-hover: rgba(0,0,0,0.06); }
     [data-theme-name="minimal"][data-theme="dark"] { --bg-primary: #1a1a1a; --bg-secondary: #222222; --text-primary: #e0e0e0; --text-secondary: #888888; --border-color: #333333; --accent-color: #e0e0e0; --code-bg: #222222; --code-text: #aaaaaa; --blockquote-border: #555555; --table-stripe: #222222; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(255,255,255,0.15); --overlay-btn-text: #e0e0e0; --overlay-btn-hover: rgba(255,255,255,0.1); }
+
+    /* Dracula 主题 */
+    [data-theme-name="dracula"] { --bg-primary: #f5f5f9; --bg-secondary: #eaeaf0; --text-primary: #2b2e3b; --text-secondary: #6a6d83; --border-color: #d5d6dc; --accent-color: #7c5cbf; --code-bg: #eaeaf0; --code-text: #7c5cbf; --blockquote-border: #7c5cbf; --table-stripe: #eaeaf0; --shadow: rgba(43,46,59,0.1); --overlay-bg: #ffffff; --overlay-toolbar-bg: rgba(255,255,255,0.95); --overlay-btn-border: rgba(43,46,59,0.15); --overlay-btn-text: #2b2e3b; --overlay-btn-hover: rgba(43,46,59,0.08); }
+    [data-theme-name="dracula"][data-theme="dark"] { --bg-primary: #282a36; --bg-secondary: #44475a; --text-primary: #f8f8f2; --text-secondary: #6272a4; --border-color: #44475a; --accent-color: #bd93f9; --code-bg: #44475a; --code-text: #ff79c6; --blockquote-border: #bd93f9; --table-stripe: #44475a; --shadow: rgba(0,0,0,0.4); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(248,248,242,0.2); --overlay-btn-text: #f8f8f2; --overlay-btn-hover: rgba(248,248,242,0.15); }
+
+    /* Solarized 主题 */
+    [data-theme-name="solarized"] { --bg-primary: #fdf6e3; --bg-secondary: #eee8d5; --text-primary: #657b83; --text-secondary: #93a1a1; --border-color: #d3d0c8; --accent-color: #268bd2; --code-bg: #eee8d5; --code-text: #2aa198; --blockquote-border: #268bd2; --table-stripe: #eee8d5; --shadow: rgba(101,123,131,0.1); --overlay-bg: #fdf6e3; --overlay-toolbar-bg: rgba(253,246,227,0.95); --overlay-btn-border: rgba(101,123,131,0.15); --overlay-btn-text: #657b83; --overlay-btn-hover: rgba(101,123,131,0.08); }
+    [data-theme-name="solarized"][data-theme="dark"] { --bg-primary: #002b36; --bg-secondary: #073642; --text-primary: #839496; --text-secondary: #586e75; --border-color: #073642; --accent-color: #268bd2; --code-bg: #073642; --code-text: #2aa198; --blockquote-border: #268bd2; --table-stripe: #073642; --shadow: rgba(0,0,0,0.4); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(131,148,150,0.2); --overlay-btn-text: #839496; --overlay-btn-hover: rgba(131,148,150,0.15); }
+
+    /* Nord 主题 */
+    [data-theme-name="nord"] { --bg-primary: #eceff4; --bg-secondary: #e5e9f0; --text-primary: #2e3440; --text-secondary: #4c566a; --border-color: #d8dee9; --accent-color: #5e81ac; --code-bg: #e5e9f0; --code-text: #bf616a; --blockquote-border: #5e81ac; --table-stripe: #e5e9f0; --shadow: rgba(46,52,64,0.1); --overlay-bg: #eceff4; --overlay-toolbar-bg: rgba(236,239,244,0.95); --overlay-btn-border: rgba(46,52,64,0.15); --overlay-btn-text: #2e3440; --overlay-btn-hover: rgba(46,52,64,0.08); }
+    [data-theme-name="nord"][data-theme="dark"] { --bg-primary: #2e3440; --bg-secondary: #3b4252; --text-primary: #eceff4; --text-secondary: #d8dee9; --border-color: #434c5e; --accent-color: #88c0d0; --code-bg: #3b4252; --code-text: #bf616a; --blockquote-border: #88c0d0; --table-stripe: #3b4252; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(236,239,244,0.2); --overlay-btn-text: #eceff4; --overlay-btn-hover: rgba(236,239,244,0.15); }
+
+    /* Gruvbox 主题 */
+    [data-theme-name="gruvbox"] { --bg-primary: #fbf1c7; --bg-secondary: #ebdbb2; --text-primary: #3c3836; --text-secondary: #928374; --border-color: #d5c4a1; --accent-color: #076678; --code-bg: #ebdbb2; --code-text: #9d0006; --blockquote-border: #076678; --table-stripe: #ebdbb2; --shadow: rgba(60,56,54,0.1); --overlay-bg: #fbf1c7; --overlay-toolbar-bg: rgba(251,241,199,0.95); --overlay-btn-border: rgba(60,56,54,0.15); --overlay-btn-text: #3c3836; --overlay-btn-hover: rgba(60,56,54,0.08); }
+    [data-theme-name="gruvbox"][data-theme="dark"] { --bg-primary: #282828; --bg-secondary: #3c3836; --text-primary: #ebdbb2; --text-secondary: #928374; --border-color: #504945; --accent-color: #fe8019; --code-bg: #3c3836; --code-text: #fb4934; --blockquote-border: #fe8019; --table-stripe: #3c3836; --shadow: rgba(0,0,0,0.4); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(235,219,178,0.2); --overlay-btn-text: #ebdbb2; --overlay-btn-hover: rgba(235,219,178,0.15); }
+
+    /* Catppuccin 主题 */
+    [data-theme-name="catppuccin"] { --bg-primary: #eff1f5; --bg-secondary: #e6e9ef; --text-primary: #4c4f69; --text-secondary: #6c6f85; --border-color: #ccd0da; --accent-color: #1e66f5; --code-bg: #e6e9ef; --code-text: #d20f39; --blockquote-border: #1e66f5; --table-stripe: #e6e9ef; --shadow: rgba(76,79,105,0.1); --overlay-bg: #eff1f5; --overlay-toolbar-bg: rgba(239,241,245,0.95); --overlay-btn-border: rgba(76,79,105,0.15); --overlay-btn-text: #4c4f69; --overlay-btn-hover: rgba(76,79,105,0.08); }
+    [data-theme-name="catppuccin"][data-theme="dark"] { --bg-primary: #1e1e2e; --bg-secondary: #313244; --text-primary: #cdd6f4; --text-secondary: #6c7086; --border-color: #45475a; --accent-color: #cba6f7; --code-bg: #313244; --code-text: #f38ba8; --blockquote-border: #cba6f7; --table-stripe: #313244; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(205,214,244,0.2); --overlay-btn-text: #cdd6f4; --overlay-btn-hover: rgba(205,214,244,0.15); }
+
+    /* Everforest 主题 */
+    [data-theme-name="everforest"] { --bg-primary: #fffbef; --bg-secondary: #f3ead3; --text-primary: #5c6a72; --text-secondary: #939f91; --border-color: #d9dace; --accent-color: #3a94c5; --code-bg: #f3ead3; --code-text: #f85552; --blockquote-border: #3a94c5; --table-stripe: #f3ead3; --shadow: rgba(92,106,114,0.1); --overlay-bg: #fffbef; --overlay-toolbar-bg: rgba(255,251,239,0.95); --overlay-btn-border: rgba(92,106,114,0.15); --overlay-btn-text: #5c6a72; --overlay-btn-hover: rgba(92,106,114,0.08); }
+    [data-theme-name="everforest"][data-theme="dark"] { --bg-primary: #272e33; --bg-secondary: #2e383c; --text-primary: #d3c6aa; --text-secondary: #859289; --border-color: #414b50; --accent-color: #7fbbb3; --code-bg: #2e383c; --code-text: #e67e80; --blockquote-border: #7fbbb3; --table-stripe: #2e383c; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(211,198,170,0.2); --overlay-btn-text: #d3c6aa; --overlay-btn-hover: rgba(211,198,170,0.15); }
+
+    /* Rosé Pine 主题 */
+    [data-theme-name="rose-pine"] { --bg-primary: #faf4ed; --bg-secondary: #fffaf3; --text-primary: #575279; --text-secondary: #9893a5; --border-color: #ebdfe4; --accent-color: #286983; --code-bg: #fffaf3; --code-text: #b4637a; --blockquote-border: #286983; --table-stripe: #fffaf3; --shadow: rgba(87,82,121,0.1); --overlay-bg: #faf4ed; --overlay-toolbar-bg: rgba(250,244,237,0.95); --overlay-btn-border: rgba(87,82,121,0.15); --overlay-btn-text: #575279; --overlay-btn-hover: rgba(87,82,121,0.08); }
+    [data-theme-name="rose-pine"][data-theme="dark"] { --bg-primary: #191724; --bg-secondary: #1f1d2e; --text-primary: #e0def4; --text-secondary: #908caa; --border-color: #26233a; --accent-color: #c4a7e7; --code-bg: #1f1d2e; --code-text: #eb6f92; --blockquote-border: #c4a7e7; --table-stripe: #1f1d2e; --shadow: rgba(0,0,0,0.4); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(224,222,244,0.2); --overlay-btn-text: #e0def4; --overlay-btn-hover: rgba(224,222,244,0.15); }
+
+    /* One Dark 主题 */
+    [data-theme-name="one-dark"] { --bg-primary: #fafafa; --bg-secondary: #f0f0f0; --text-primary: #383a42; --text-secondary: #a0a1a7; --border-color: #e5e5e6; --accent-color: #4078f2; --code-bg: #f0f0f0; --code-text: #e45649; --blockquote-border: #4078f2; --table-stripe: #f0f0f0; --shadow: rgba(56,58,66,0.1); --overlay-bg: #fafafa; --overlay-toolbar-bg: rgba(250,250,250,0.95); --overlay-btn-border: rgba(56,58,66,0.15); --overlay-btn-text: #383a42; --overlay-btn-hover: rgba(56,58,66,0.08); }
+    [data-theme-name="one-dark"][data-theme="dark"] { --bg-primary: #282c34; --bg-secondary: #2c313a; --text-primary: #abb2bf; --text-secondary: #5c6370; --border-color: #3e4451; --accent-color: #61afef; --code-bg: #2c313a; --code-text: #e06c75; --blockquote-border: #61afef; --table-stripe: #2c313a; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(171,178,191,0.2); --overlay-btn-text: #abb2bf; --overlay-btn-hover: rgba(171,178,191,0.15); }
+
+    /* Notion 主题 */
+    [data-theme-name="notion"] { --bg-primary: #ffffff; --bg-secondary: #f7f6f3; --text-primary: #37352f; --text-secondary: #9b9a97; --border-color: #e9e9e7; --accent-color: #2383e2; --code-bg: #f7f6f3; --code-text: #eb5757; --blockquote-border: #2383e2; --table-stripe: #f7f6f3; --shadow: rgba(55,53,47,0.08); --overlay-bg: #ffffff; --overlay-toolbar-bg: rgba(255,255,255,0.95); --overlay-btn-border: rgba(55,53,47,0.15); --overlay-btn-text: #37352f; --overlay-btn-hover: rgba(55,53,47,0.06); }
+    [data-theme-name="notion"][data-theme="dark"] { --bg-primary: #191919; --bg-secondary: #202020; --text-primary: #d4d4d4; --text-secondary: #808080; --border-color: #2e2e2e; --accent-color: #529cca; --code-bg: #202020; --code-text: #ff7373; --blockquote-border: #529cca; --table-stripe: #202020; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(255,255,255,0.15); --overlay-btn-text: #d4d4d4; --overlay-btn-hover: rgba(255,255,255,0.1); }
+
+    /* Ayu 主题 */
+    [data-theme-name="ayu"] { --bg-primary: #fafafa; --bg-secondary: #f3f3f3; --text-primary: #5c6773; --text-secondary: #828a93; --border-color: #e6e6e6; --accent-color: #f29718; --code-bg: #f3f3f3; --code-text: #e6b450; --blockquote-border: #f29718; --table-stripe: #f3f3f3; --shadow: rgba(92,103,115,0.1); --overlay-bg: #fafafa; --overlay-toolbar-bg: rgba(250,250,250,0.95); --overlay-btn-border: rgba(92,103,115,0.15); --overlay-btn-text: #5c6773; --overlay-btn-hover: rgba(92,103,115,0.08); }
+    [data-theme-name="ayu"][data-theme="dark"] { --bg-primary: #0a0e14; --bg-secondary: #0d1017; --text-primary: #b3b1ad; --text-secondary: #626a73; --border-color: #1a1f29; --accent-color: #e6b450; --code-bg: #0d1017; --code-text: #ff8f40; --blockquote-border: #e6b450; --table-stripe: #0d1017; --shadow: rgba(0,0,0,0.4); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(179,177,173,0.2); --overlay-btn-text: #b3b1ad; --overlay-btn-hover: rgba(179,177,173,0.15); }
+
+    /* Flexoki 主题 */
+    [data-theme-name="flexoki"] { --bg-primary: #fffcf0; --bg-secondary: #f2f0e5; --text-primary: #100f0f; --text-secondary: #6e6a5f; --border-color: #e8e5d9; --accent-color: #205ea6; --code-bg: #f2f0e5; --code-text: #af3029; --blockquote-border: #205ea6; --table-stripe: #f2f0e5; --shadow: rgba(16,15,15,0.08); --overlay-bg: #fffcf0; --overlay-toolbar-bg: rgba(255,252,240,0.95); --overlay-btn-border: rgba(16,15,15,0.12); --overlay-btn-text: #100f0f; --overlay-btn-hover: rgba(16,15,15,0.06); }
+    [data-theme-name="flexoki"][data-theme="dark"] { --bg-primary: #100f0f; --bg-secondary: #1c1b1a; --text-primary: #cecdc3; --text-secondary: #878580; --border-color: #282726; --accent-color: #5e9af0; --code-bg: #1c1b1a; --code-text: #d14d41; --blockquote-border: #5e9af0; --table-stripe: #1c1b1a; --shadow: rgba(0,0,0,0.3); --overlay-bg: rgba(0,0,0,0.9); --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(206,205,195,0.15); --overlay-btn-text: #cecdc3; --overlay-btn-hover: rgba(206,205,195,0.1); }
 
     /* 主题切换过渡 */
     html { transition: background-color 0.3s, color 0.3s; }
@@ -407,6 +462,50 @@ function getTocStyles(): string {
     [data-theme-name="minimal"] { --bg-primary: #ffffff; --bg-hover: #f5f5f5; --bg-active: #eeeeee; --text-primary: #333333; --text-secondary: #999999; --accent-color: #333333; --border-color: #e0e0e0; }
     [data-theme-name="minimal"][data-theme="dark"] { --bg-primary: #1a1a1a; --bg-hover: #222222; --bg-active: #2a2a2a; --text-primary: #e0e0e0; --text-secondary: #888888; --accent-color: #e0e0e0; --border-color: #333333; }
 
+    /* Dracula 主题 */
+    [data-theme-name="dracula"] { --bg-primary: #f5f5f9; --bg-hover: #eaeaf0; --bg-active: #e0dff0; --text-primary: #2b2e3b; --text-secondary: #6a6d83; --accent-color: #7c5cbf; --border-color: #d5d6dc; }
+    [data-theme-name="dracula"][data-theme="dark"] { --bg-primary: #282a36; --bg-hover: #44475a; --bg-active: #3a3d52; --text-primary: #f8f8f2; --text-secondary: #6272a4; --accent-color: #bd93f9; --border-color: #44475a; }
+
+    /* Solarized 主题 */
+    [data-theme-name="solarized"] { --bg-primary: #fdf6e3; --bg-hover: #eee8d5; --bg-active: #e0dac5; --text-primary: #657b83; --text-secondary: #93a1a1; --accent-color: #268bd2; --border-color: #d3d0c8; }
+    [data-theme-name="solarized"][data-theme="dark"] { --bg-primary: #002b36; --bg-hover: #073642; --bg-active: #0a4050; --text-primary: #839496; --text-secondary: #586e75; --accent-color: #268bd2; --border-color: #073642; }
+
+    /* Nord 主题 */
+    [data-theme-name="nord"] { --bg-primary: #eceff4; --bg-hover: #e5e9f0; --bg-active: #d8dee9; --text-primary: #2e3440; --text-secondary: #4c566a; --accent-color: #5e81ac; --border-color: #d8dee9; }
+    [data-theme-name="nord"][data-theme="dark"] { --bg-primary: #2e3440; --bg-hover: #3b4252; --bg-active: #434c5e; --text-primary: #eceff4; --text-secondary: #d8dee9; --accent-color: #88c0d0; --border-color: #434c5e; }
+
+    /* Gruvbox 主题 */
+    [data-theme-name="gruvbox"] { --bg-primary: #fbf1c7; --bg-hover: #ebdbb2; --bg-active: #d5c4a1; --text-primary: #3c3836; --text-secondary: #928374; --accent-color: #076678; --border-color: #d5c4a1; }
+    [data-theme-name="gruvbox"][data-theme="dark"] { --bg-primary: #282828; --bg-hover: #3c3836; --bg-active: #504945; --text-primary: #ebdbb2; --text-secondary: #928374; --accent-color: #fe8019; --border-color: #504945; }
+
+    /* Catppuccin 主题 */
+    [data-theme-name="catppuccin"] { --bg-primary: #eff1f5; --bg-hover: #e6e9ef; --bg-active: #dce0e8; --text-primary: #4c4f69; --text-secondary: #6c6f85; --accent-color: #1e66f5; --border-color: #ccd0da; }
+    [data-theme-name="catppuccin"][data-theme="dark"] { --bg-primary: #1e1e2e; --bg-hover: #313244; --bg-active: #45475a; --text-primary: #cdd6f4; --text-secondary: #6c7086; --accent-color: #cba6f7; --border-color: #45475a; }
+
+    /* Everforest 主题 */
+    [data-theme-name="everforest"] { --bg-primary: #fffbef; --bg-hover: #f3ead3; --bg-active: #eae0c3; --text-primary: #5c6a72; --text-secondary: #939f91; --accent-color: #3a94c5; --border-color: #d9dace; }
+    [data-theme-name="everforest"][data-theme="dark"] { --bg-primary: #272e33; --bg-hover: #2e383c; --bg-active: #374145; --text-primary: #d3c6aa; --text-secondary: #859289; --accent-color: #7fbbb3; --border-color: #414b50; }
+
+    /* Rosé Pine 主题 */
+    [data-theme-name="rose-pine"] { --bg-primary: #faf4ed; --bg-hover: #fffaf3; --bg-active: #f2ece5; --text-primary: #575279; --text-secondary: #9893a5; --accent-color: #286983; --border-color: #ebdfe4; }
+    [data-theme-name="rose-pine"][data-theme="dark"] { --bg-primary: #191724; --bg-hover: #1f1d2e; --bg-active: #26233a; --text-primary: #e0def4; --text-secondary: #908caa; --accent-color: #c4a7e7; --border-color: #26233a; }
+
+    /* One Dark 主题 */
+    [data-theme-name="one-dark"] { --bg-primary: #fafafa; --bg-hover: #f0f0f0; --bg-active: #e5e5e6; --text-primary: #383a42; --text-secondary: #a0a1a7; --accent-color: #4078f2; --border-color: #e5e5e6; }
+    [data-theme-name="one-dark"][data-theme="dark"] { --bg-primary: #282c34; --bg-hover: #2c313a; --bg-active: #3e4451; --text-primary: #abb2bf; --text-secondary: #5c6370; --accent-color: #61afef; --border-color: #3e4451; }
+
+    /* Notion 主题 */
+    [data-theme-name="notion"] { --bg-primary: #ffffff; --bg-hover: #f7f6f3; --bg-active: #edece8; --text-primary: #37352f; --text-secondary: #9b9a97; --accent-color: #2383e2; --border-color: #e9e9e7; }
+    [data-theme-name="notion"][data-theme="dark"] { --bg-primary: #191919; --bg-hover: #202020; --bg-active: #2a2a2a; --text-primary: #d4d4d4; --text-secondary: #808080; --accent-color: #529cca; --border-color: #2e2e2e; }
+
+    /* Ayu 主题 */
+    [data-theme-name="ayu"] { --bg-primary: #fafafa; --bg-hover: #f3f3f3; --bg-active: #e6e6e6; --text-primary: #5c6773; --text-secondary: #828a93; --accent-color: #f29718; --border-color: #e6e6e6; }
+    [data-theme-name="ayu"][data-theme="dark"] { --bg-primary: #0a0e14; --bg-hover: #0d1017; --bg-active: #1a1f29; --text-primary: #b3b1ad; --text-secondary: #626a73; --accent-color: #e6b450; --border-color: #1a1f29; }
+
+    /* Flexoki 主题 */
+    [data-theme-name="flexoki"] { --bg-primary: #fffcf0; --bg-hover: #f2f0e5; --bg-active: #e8e5d9; --text-primary: #100f0f; --text-secondary: #6e6a5f; --accent-color: #205ea6; --border-color: #e8e5d9; }
+    [data-theme-name="flexoki"][data-theme="dark"] { --bg-primary: #100f0f; --bg-hover: #1c1b1a; --bg-active: #282726; --text-primary: #cecdc3; --text-secondary: #878580; --accent-color: #5e9af0; --border-color: #282726; }
+
     body { background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; }
 
     /* 设置面板 */
@@ -437,7 +536,7 @@ function getTocStyles(): string {
     .style-input::placeholder { color: var(--text-secondary); opacity: 0.6; }
 
     /* 主题风格卡片 */
-    .settings-theme-card-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .settings-theme-card-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .theme-card { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 11px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
     .theme-card:hover { background: var(--bg-hover); }
     .theme-card.active { border-color: var(--accent-color); background: var(--bg-active); font-weight: 500; }
