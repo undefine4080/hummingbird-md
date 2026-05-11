@@ -264,51 +264,57 @@ export function getTocHtml(
       <span class="settings-arrow" id="settings-arrow">▶</span>
     </div>
     <div class="settings-body" id="settings-body">
-      <div class="settings-section-label">明暗模式</div>
-      <div class="settings-theme-group">
-        <button class="theme-btn" id="theme-btn-light" title="浅色模式">浅色</button>
-        <button class="theme-btn" id="theme-btn-dark" title="深色模式">深色</button>
+      <div class="settings-section">
+        <div class="settings-section-label">外观</div>
+        <div class="settings-theme-group">
+          <button class="theme-btn" id="theme-btn-light" title="浅色模式">☀ 浅色</button>
+          <button class="theme-btn" id="theme-btn-dark" title="深色模式">☾ 深色</button>
+        </div>
       </div>
-      <div class="settings-section-label" style="margin-top: 10px;">主题风格</div>
-      <div class="settings-theme-card-group" id="theme-card-group">
-        <button class="theme-card${currentThemeName === "classic" ? " active" : ""}" data-theme-name="classic"><span class="theme-card-dot" style="background: #0d6efd;"></span>Classic</button>
-        <button class="theme-card${currentThemeName === "github" ? " active" : ""}" data-theme-name="github"><span class="theme-card-dot" style="background: #0969da;"></span>GitHub</button>
-        <button class="theme-card${currentThemeName === "vue" ? " active" : ""}" data-theme-name="vue"><span class="theme-card-dot" style="background: #42b883;"></span>Vue</button>
-        <button class="theme-card${currentThemeName === "minimal" ? " active" : ""}" data-theme-name="minimal"><span class="theme-card-dot" style="background: #666;"></span>Minimal</button>
-        <button class="theme-card${currentThemeName === "dracula" ? " active" : ""}" data-theme-name="dracula"><span class="theme-card-dot" style="background: #bd93f9;"></span>Dracula</button>
-        <button class="theme-card${currentThemeName === "solarized" ? " active" : ""}" data-theme-name="solarized"><span class="theme-card-dot" style="background: #268bd2;"></span>Solarized</button>
-        <button class="theme-card${currentThemeName === "nord" ? " active" : ""}" data-theme-name="nord"><span class="theme-card-dot" style="background: #88c0d0;"></span>Nord</button>
-        <button class="theme-card${currentThemeName === "gruvbox" ? " active" : ""}" data-theme-name="gruvbox"><span class="theme-card-dot" style="background: #fe8019;"></span>Gruvbox</button>
-        <button class="theme-card${currentThemeName === "catppuccin" ? " active" : ""}" data-theme-name="catppuccin"><span class="theme-card-dot" style="background: #cba6f7;"></span>Catppuccin</button>
-        <button class="theme-card${currentThemeName === "everforest" ? " active" : ""}" data-theme-name="everforest"><span class="theme-card-dot" style="background: #7fbbb3;"></span>Everforest</button>
-        <button class="theme-card${currentThemeName === "rose-pine" ? " active" : ""}" data-theme-name="rose-pine"><span class="theme-card-dot" style="background: #c4a7e7;"></span>Rosé Pine</button>
-        <button class="theme-card${currentThemeName === "one-dark" ? " active" : ""}" data-theme-name="one-dark"><span class="theme-card-dot" style="background: #61afef;"></span>One Dark</button>
-        <button class="theme-card${currentThemeName === "notion" ? " active" : ""}" data-theme-name="notion"><span class="theme-card-dot" style="background: #2383e2;"></span>Notion</button>
-        <button class="theme-card${currentThemeName === "ayu" ? " active" : ""}" data-theme-name="ayu"><span class="theme-card-dot" style="background: #e6b450;"></span>Ayu</button>
-        <button class="theme-card${currentThemeName === "flexoki" ? " active" : ""}" data-theme-name="flexoki"><span class="theme-card-dot" style="background: #5e9af0;"></span>Flexoki</button>
+      <div class="settings-section">
+        <div class="settings-section-label">主题风格</div>
+        <div class="settings-theme-card-group" id="theme-card-group">
+          <button class="theme-card${currentThemeName === "classic" ? " active" : ""}" data-theme-name="classic"><span class="theme-card-dot" style="background: #0d6efd;"></span>Classic</button>
+          <button class="theme-card${currentThemeName === "github" ? " active" : ""}" data-theme-name="github"><span class="theme-card-dot" style="background: #0969da;"></span>GitHub</button>
+          <button class="theme-card${currentThemeName === "vue" ? " active" : ""}" data-theme-name="vue"><span class="theme-card-dot" style="background: #42b883;"></span>Vue</button>
+          <button class="theme-card${currentThemeName === "minimal" ? " active" : ""}" data-theme-name="minimal"><span class="theme-card-dot" style="background: #666;"></span>Minimal</button>
+          <button class="theme-card${currentThemeName === "dracula" ? " active" : ""}" data-theme-name="dracula"><span class="theme-card-dot" style="background: #bd93f9;"></span>Dracula</button>
+          <button class="theme-card${currentThemeName === "solarized" ? " active" : ""}" data-theme-name="solarized"><span class="theme-card-dot" style="background: #268bd2;"></span>Solarized</button>
+          <button class="theme-card${currentThemeName === "nord" ? " active" : ""}" data-theme-name="nord"><span class="theme-card-dot" style="background: #88c0d0;"></span>Nord</button>
+          <button class="theme-card${currentThemeName === "gruvbox" ? " active" : ""}" data-theme-name="gruvbox"><span class="theme-card-dot" style="background: #fe8019;"></span>Gruvbox</button>
+          <button class="theme-card${currentThemeName === "catppuccin" ? " active" : ""}" data-theme-name="catppuccin"><span class="theme-card-dot" style="background: #cba6f7;"></span>Catppuccin</button>
+          <button class="theme-card${currentThemeName === "everforest" ? " active" : ""}" data-theme-name="everforest"><span class="theme-card-dot" style="background: #7fbbb3;"></span>Everforest</button>
+          <button class="theme-card${currentThemeName === "rose-pine" ? " active" : ""}" data-theme-name="rose-pine"><span class="theme-card-dot" style="background: #c4a7e7;"></span>Rosé Pine</button>
+          <button class="theme-card${currentThemeName === "one-dark" ? " active" : ""}" data-theme-name="one-dark"><span class="theme-card-dot" style="background: #61afef;"></span>One Dark</button>
+          <button class="theme-card${currentThemeName === "notion" ? " active" : ""}" data-theme-name="notion"><span class="theme-card-dot" style="background: #2383e2;"></span>Notion</button>
+          <button class="theme-card${currentThemeName === "ayu" ? " active" : ""}" data-theme-name="ayu"><span class="theme-card-dot" style="background: #e6b450;"></span>Ayu</button>
+          <button class="theme-card${currentThemeName === "flexoki" ? " active" : ""}" data-theme-name="flexoki"><span class="theme-card-dot" style="background: #5e9af0;"></span>Flexoki</button>
+        </div>
       </div>
-      <div class="settings-section-label" style="margin-top: 12px;">阅读样式</div>
-      <div class="settings-style-group">
-        <div class="style-control">
-          <label class="style-label" for="style-font-size">字体大小 <span id="style-font-size-val">16</span>px</label>
-          <input type="range" id="style-font-size" class="style-slider" min="12" max="24" value="16" step="1" />
-        </div>
-        <div class="style-control">
-          <label class="style-label" for="style-font-family">字体</label>
-          <select id="style-font-family" class="style-select"></select>
-          <input type="text" id="style-font-family-custom" class="style-input" placeholder="例: 'Georgia', serif" style="display:none;" />
-        </div>
-        <div class="style-control">
-          <label class="style-label" for="style-font-weight">字体粗细 <span id="style-font-weight-val">400</span></label>
-          <input type="range" id="style-font-weight" class="style-slider" min="300" max="700" value="400" step="100" />
-        </div>
-        <div class="style-control">
-          <label class="style-label" for="style-line-height">行间距 <span id="style-line-height-val">1.8</span></label>
-          <input type="range" id="style-line-height" class="style-slider" min="1.2" max="2.5" value="1.8" step="0.1" />
-        </div>
-        <div class="style-control">
-          <label class="style-label" for="style-paragraph-spacing">段落间距 <span id="style-paragraph-spacing-val">1.0</span>em</label>
-          <input type="range" id="style-paragraph-spacing" class="style-slider" min="0.5" max="2" value="1" step="0.1" />
+      <div class="settings-section">
+        <div class="settings-section-label">阅读样式</div>
+        <div class="settings-style-group">
+          <div class="style-control">
+            <label class="style-label" for="style-font-size">字体大小 <span id="style-font-size-val">16</span>px</label>
+            <input type="range" id="style-font-size" class="style-slider" min="12" max="24" value="16" step="1" />
+          </div>
+          <div class="style-control">
+            <label class="style-label" for="style-font-family">字体</label>
+            <select id="style-font-family" class="style-select"></select>
+            <input type="text" id="style-font-family-custom" class="style-input" placeholder="例: 'Georgia', serif" style="display:none;" />
+          </div>
+          <div class="style-control">
+            <label class="style-label" for="style-font-weight">字体粗细 <span id="style-font-weight-val">400</span></label>
+            <input type="range" id="style-font-weight" class="style-slider" min="300" max="700" value="400" step="100" />
+          </div>
+          <div class="style-control">
+            <label class="style-label" for="style-line-height">行间距 <span id="style-line-height-val">1.8</span></label>
+            <input type="range" id="style-line-height" class="style-slider" min="1.2" max="2.5" value="1.8" step="0.1" />
+          </div>
+          <div class="style-control">
+            <label class="style-label" for="style-paragraph-spacing">段落间距 <span id="style-paragraph-spacing-val">1.0</span>em</label>
+            <input type="range" id="style-paragraph-spacing" class="style-slider" min="0.5" max="2" value="1" step="0.1" />
+          </div>
         </div>
       </div>
     </div>
@@ -616,38 +622,49 @@ function getTocStyles(): string {
     body { background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; }
 
     /* 设置面板 */
+    /* 设置面板 */
     .settings-panel { border-bottom: 1px solid var(--border-color); }
-    .settings-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none; }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; user-select: none; }
     .settings-header:hover { background: var(--bg-hover); }
-    .settings-header-text { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .settings-header-text { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); }
     .settings-arrow { font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
     .settings-arrow.open { transform: rotate(90deg); }
-    .settings-body { display: none; padding: 8px 12px 12px; }
+    .settings-body { display: none; padding: 4px 16px 16px; }
     .settings-body.open { display: block; }
-    .settings-section-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
-    .settings-theme-group { display: flex; gap: 6px; }
-    .theme-btn { flex: 1; padding: 6px 0; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font-size: 12px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+
+    /* 设置分区 */
+    .settings-section { padding: 12px 0; border-top: 1px solid var(--border-color); }
+    .settings-section:first-child { border-top: none; padding-top: 4px; }
+    .settings-section-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.3px; }
+
+    /* 明暗模式按钮 */
+    .settings-theme-group { display: flex; gap: 8px; }
+    .theme-btn { flex: 1; padding: 8px 0; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 13px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
     .theme-btn:hover { background: var(--bg-hover); }
     .theme-btn.active { border-color: var(--accent-color); background: var(--bg-active); color: var(--accent-color); font-weight: 500; }
 
     /* 阅读样式控件 */
-    .settings-style-group { display: flex; flex-direction: column; gap: 10px; }
-    .style-control { display: flex; flex-direction: column; gap: 4px; }
-    .style-label { font-size: 11px; color: var(--text-secondary); display: flex; justify-content: space-between; }
-    .style-label span { color: var(--accent-color); font-weight: 500; font-family: monospace; }
-    .style-slider { width: 100%; height: 4px; appearance: none; background: var(--border-color); border-radius: 2px; outline: none; cursor: pointer; }
-    .style-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: var(--accent-color); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-    .style-select { width: 100%; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font-size: 12px; outline: none; cursor: pointer; }
+    .settings-style-group { display: flex; flex-direction: column; gap: 14px; }
+    .style-control { display: flex; flex-direction: column; gap: 6px; }
+    .style-label { font-size: 12px; color: var(--text-primary); display: flex; justify-content: space-between; opacity: 0.85; }
+    .style-label span { color: var(--accent-color); font-weight: 600; font-family: monospace; font-size: 11px; opacity: 1; }
+    .style-slider { width: 100%; height: 6px; appearance: none; background: var(--border-color); border-radius: 3px; outline: none; cursor: pointer; transition: background 0.15s; }
+    .style-slider:hover { background: var(--text-secondary); }
+    .style-slider::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; background: var(--accent-color); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: transform 0.1s; }
+    .style-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    .style-slider:active::-webkit-slider-thumb { transform: scale(0.95); }
+    .style-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 12px; outline: none; cursor: pointer; transition: border-color 0.15s; }
+    .style-select:hover { border-color: var(--text-secondary); }
     .style-select:focus { border-color: var(--accent-color); }
-    .style-input { width: 100%; padding: 4px 8px; border: 1px solid var(--accent-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font-size: 11px; font-family: monospace; outline: none; margin-top: 4px; }
-    .style-input::placeholder { color: var(--text-secondary); opacity: 0.6; }
+    .style-input { width: 100%; padding: 7px 10px; border: 1px solid var(--accent-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 12px; font-family: monospace; outline: none; margin-top: 6px; transition: border-color 0.15s; }
+    .style-input::placeholder { color: var(--text-secondary); opacity: 0.5; }
 
     /* 主题风格卡片 */
     .settings-theme-card-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-    .theme-card { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 11px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
-    .theme-card:hover { background: var(--bg-hover); }
+    .theme-card { display: flex; align-items: center; gap: 6px; padding: 7px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 11px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .theme-card:hover { background: var(--bg-hover); border-color: var(--text-secondary); }
     .theme-card.active { border-color: var(--accent-color); background: var(--bg-active); font-weight: 500; }
-    .theme-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .theme-card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
 
     .toc-empty { color: var(--text-secondary); padding: 16px; text-align: center; font-style: italic; }
 
@@ -663,14 +680,14 @@ function getTocStyles(): string {
 
     /* 文档信息面板 */
     .doc-stats-panel { border-top: 1px solid var(--border-color); margin-top: auto; }
-    .doc-stats-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none; }
+    .doc-stats-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; user-select: none; }
     .doc-stats-header:hover { background: var(--bg-hover); }
-    .doc-stats-header-text { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .doc-stats-header-text { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); }
     .doc-stats-arrow { font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
     .doc-stats-arrow.open { transform: rotate(90deg); }
-    .doc-stats-body { display: none; padding: 6px 12px 12px; }
+    .doc-stats-body { display: none; padding: 8px 16px 16px; }
     .doc-stats-body.open { display: block; }
-    .doc-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+    .doc-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
     .stat-item { display: flex; flex-direction: column; gap: 2px; }
     .stat-item-full { grid-column: 1 / -1; }
     .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
