@@ -101,7 +101,6 @@ function setupMessageListeners(): void {
 function handleMessage(message: ToWebview): void {
   switch (message.type) {
     case "updateTheme":
-      // 主题切换由 reader-entry.ts 统一处理（含 mermaid 重渲染）
       break;
     case "updateStyle":
       applyReadingStyle(message.data);
@@ -111,6 +110,12 @@ function handleMessage(message: ToWebview): void {
       break;
     case "highlightHeading":
       scrollToHeading(message.data.id);
+      break;
+    case "requestScrollPosition":
+      postMessage({ type: "scrollPosition", data: { scrollY: window.scrollY } });
+      break;
+    case "restoreScrollPosition":
+      window.scrollTo({ top: message.data.scrollY, behavior: "instant" as ScrollBehavior });
       break;
     case "init":
       break;
@@ -180,33 +185,101 @@ const COPY_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" s
 /** 成功图标 SVG */
 const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
 
-/** 为所有代码块添加复制按钮 */
+/** 全屏图标 SVG */
+const FULLSCREEN_ICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';
+
+/** 为所有代码块添加复制和全屏按钮 */
 function initCodeBlockCopy(): void {
   const blocks = document.querySelectorAll<HTMLElement>("#reader-content pre");
   blocks.forEach((pre: HTMLElement): void => {
-    // 跳过 mermaid 容器
     if (pre.classList.contains("mermaid")) {
       return;
     }
 
-    const btn = document.createElement("button");
-    btn.className = "code-copy-btn";
-    btn.title = "复制代码";
-    btn.innerHTML = COPY_ICON;
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block-wrapper";
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
 
-    btn.addEventListener("click", (): void => {
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "code-copy-btn";
+    copyBtn.title = "复制代码";
+    copyBtn.innerHTML = COPY_ICON;
+
+    copyBtn.addEventListener("click", (): void => {
       const code = pre.querySelector("code");
       const text = code?.textContent ?? pre.textContent ?? "";
       void navigator.clipboard.writeText(text).then((): void => {
-        btn.innerHTML = CHECK_ICON;
-        btn.classList.add("copied");
+        copyBtn.innerHTML = CHECK_ICON;
+        copyBtn.classList.add("copied");
         setTimeout((): void => {
-          btn.innerHTML = COPY_ICON;
-          btn.classList.remove("copied");
+          copyBtn.innerHTML = COPY_ICON;
+          copyBtn.classList.remove("copied");
         }, 1500);
       });
     });
 
-    pre.appendChild(btn);
+    wrapper.appendChild(copyBtn);
+
+    const fullscreenBtn = document.createElement("button");
+    fullscreenBtn.className = "code-copy-btn";
+    fullscreenBtn.title = "全屏查看";
+    fullscreenBtn.innerHTML = FULLSCREEN_ICON;
+    fullscreenBtn.style.right = "36px";
+
+    fullscreenBtn.addEventListener("click", (): void => {
+      showCodeFullscreen(pre);
+    });
+
+    wrapper.appendChild(fullscreenBtn);
+  });
+
+  bindCodeFullscreenEvents();
+}
+
+/** 显示代码全屏 overlay */
+function showCodeFullscreen(pre: HTMLElement): void {
+  const overlay = document.getElementById("code-fullscreen-overlay");
+  const content = document.getElementById("code-fullscreen-content");
+  if (!overlay || !content) {
+    return;
+  }
+
+  const clone = pre.cloneNode(true) as HTMLElement;
+  content.innerHTML = "";
+  content.appendChild(clone);
+  overlay.classList.add("active");
+}
+
+/** 关闭代码全屏 overlay */
+function closeCodeFullscreen(): void {
+  const overlay = document.getElementById("code-fullscreen-overlay");
+  const content = document.getElementById("code-fullscreen-content");
+  if (overlay) {
+    overlay.classList.remove("active");
+  }
+  if (content) {
+    content.innerHTML = "";
+  }
+}
+
+/** 绑定代码全屏 overlay 事件 */
+function bindCodeFullscreenEvents(): void {
+  document.getElementById("cf-close")?.addEventListener("click", (): void => {
+    closeCodeFullscreen();
+  });
+
+  const overlay = document.getElementById("code-fullscreen-overlay");
+  overlay?.addEventListener("click", (e): void => {
+    if (e.target === overlay) {
+      closeCodeFullscreen();
+    }
+  });
+
+  document.addEventListener("keydown", (e: KeyboardEvent): void => {
+    if (e.key === "Escape" && overlay?.classList.contains("active")) {
+      e.preventDefault();
+      closeCodeFullscreen();
+    }
   });
 }

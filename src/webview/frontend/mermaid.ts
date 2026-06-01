@@ -190,9 +190,11 @@ function showFullscreen(diagramIndex: number): void {
   vs.translateY = 0;
   vs.rotation = 0;
 
-  // 等 DOM 渲染后自适应
+  // 等 DOM 渲染后自适应（双 rAF 确保布局完成）
   requestAnimationFrame((): void => {
-    fitToViewport();
+    requestAnimationFrame((): void => {
+      fitToViewport();
+    });
   });
 }
 
@@ -259,7 +261,7 @@ function fitToViewport(): void {
   const padding = 0.9;
   const scaleX = (cw * padding) / svgW;
   const scaleY = (ch * padding) / svgH;
-  vs.scale = Math.min(scaleX, scaleY, 1);
+  vs.scale = Math.min(scaleX, scaleY);
   vs.translateX = 0;
   vs.translateY = 0;
   applyTransform();

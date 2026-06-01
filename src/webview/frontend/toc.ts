@@ -137,6 +137,9 @@ function setupMessageListeners(): void {
         break;
       case "updateThemeName":
         break;
+      case "requestScrollPosition":
+      case "restoreScrollPosition":
+        break;
       case "init":
         break;
     }

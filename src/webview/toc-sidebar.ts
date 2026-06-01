@@ -181,6 +181,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
         this.onStyleChanged?.(message.data);
         break;
 
+      case "scrollPosition":
+        break;
+
       case "themeNameChanged":
         this.pendingThemeName = message.data.themeName;
         this.onThemeNameChanged?.(message.data.themeName);

@@ -2,7 +2,7 @@
   "name": "hummingbird-md",
   "displayName": "Hummingbird MD",
   "description": "专业的 Markdown 阅读器，支持目录导航、主题切换、字体调整、图片查看器和 Mermaid 图表渲染",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "hummingbird-md",
   "license": "MIT",
   "icon": "media/icon.png",

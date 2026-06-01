@@ -130,7 +130,9 @@ async function openReader(
   context: vscode.ExtensionContext,
 ): Promise<void> {
   // 如果已有该文档的面板，则聚焦
-  if (activePanels.has(uri.path)) {
+  const existingPanel = activePanels.get(uri.path);
+  if (existingPanel) {
+    existingPanel.reveal();
     return;
   }
 

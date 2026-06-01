@@ -38,6 +38,24 @@ export class ReaderPanel {
   /** VSCode 主题变化监听器的 Disposable */
   private themeChangeListener: vscode.Disposable;
 
+  /** 面板视图状态变化监听器 */
+  private viewStateListener: vscode.Disposable;
+
+  /** 文件变更监听器 */
+  private fileWatcher: vscode.Disposable;
+
+  /** 滚动位置请求的 Promise resolver */
+  private scrollResolve: ((scrollY: number) => void) | null = null;
+
+  /** 防抖重载定时器 */
+  private reloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** 缓存的标题数据，面板重新激活时通知 TOC 刷新 */
+  private cachedHeadings: Heading[] | null = null;
+
+  /** 缓存的文档统计信息 */
+  private cachedStats: DocumentStats | null = null;
+
   /** Webview 消息监听器的 Disposable */
   private messageListener: vscode.Disposable;
 
@@ -49,6 +67,9 @@ export class ReaderPanel {
 
   /** 当前主题风格名称 */
   private currentThemeName: ThemeName = "classic";
+
+  /** 最后活跃的标题 ID，面板重新激活时恢复高亮 */
+  private lastHighlightedId = "";
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -81,6 +102,26 @@ export class ReaderPanel {
     this.themeChangeListener = vscode.window.onDidChangeActiveColorTheme(() => {
       const theme = getTheme();
       this.postMessage({ type: "updateTheme", data: { theme } });
+    });
+
+    // 监听面板视图状态变化，切换到此 tab 时刷新 TOC 并恢复高亮
+    this.viewStateListener = this.panel.onDidChangeViewState((e) => {
+      if (e.webviewPanel.active && this.cachedHeadings && this.cachedStats) {
+        const theme = getTheme();
+        this.onHeadingsLoaded?.(this.cachedHeadings, theme, this.cachedStats);
+        if (this.lastHighlightedId) {
+          setTimeout(() => {
+            this.onHeadingChanged?.(this.lastHighlightedId);
+          }, 150);
+        }
+      }
+    });
+
+    // 监听文件变更，自动刷新预览
+    this.fileWatcher = vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document.uri.path === this.currentUri.path) {
+        this.scheduleReload();
+      }
     });
   }
 
@@ -152,6 +193,44 @@ export class ReaderPanel {
     this.postMessage({ type: "updateThemeName", data: { themeName: name } });
   }
 
+  /** 聚焦已有面板（当用户再次打开同一文档时） */
+  public reveal(): void {
+    this.panel.reveal();
+  }
+
+  /** 防抖调度重载：文件变更后延迟刷新 */
+  private scheduleReload(): void {
+    if (this.reloadTimer) {
+      clearTimeout(this.reloadTimer);
+    }
+    this.reloadTimer = setTimeout(() => {
+      void this.reloadWithScrollRestore();
+    }, 500);
+  }
+
+  /** 保存滚动位置后重新加载文档 */
+  private async reloadWithScrollRestore(): Promise<void> {
+    const scrollY = await this.requestScrollPosition();
+    await this.loadAndRender();
+    if (scrollY > 0) {
+      this.postMessage({ type: "restoreScrollPosition", data: { scrollY } });
+    }
+  }
+
+  /** 向 webview 请求当前滚动位置 */
+  private requestScrollPosition(): Promise<number> {
+    return new Promise((resolve) => {
+      this.scrollResolve = resolve;
+      this.postMessage({ type: "requestScrollPosition" });
+      setTimeout(() => {
+        if (this.scrollResolve) {
+          this.scrollResolve = null;
+          resolve(0);
+        }
+      }, 300);
+    });
+  }
+
   /** 更新文档内容（重新加载 Markdown） */
   public async updateDocument(uri: vscode.Uri): Promise<void> {
     this.currentUri = uri;
@@ -193,6 +272,9 @@ export class ReaderPanel {
     );
 
     const theme = getTheme();
+    this.cachedHeadings = doc.headings;
+    this.cachedStats = stats;
+    this.lastHighlightedId = "";
     this.panel.webview.html = getReaderHtml(
       this.panel.webview,
       this.extensionUri,
@@ -212,7 +294,7 @@ export class ReaderPanel {
   private handleMessage(message: MessageProtocol.ToExtension): void {
     switch (message.type) {
       case "headingChanged":
-        // 转发给 TOC 侧边栏高亮对应项
+        this.lastHighlightedId = message.data.id;
         this.onHeadingChanged?.(message.data.id);
         break;
 
@@ -238,7 +320,13 @@ export class ReaderPanel {
         break;
 
       case "openMermaidFullscreen":
-        // Mermaid 全屏查看暂不处理
+        break;
+
+      case "scrollPosition":
+        if (this.scrollResolve) {
+          this.scrollResolve(message.data.scrollY);
+          this.scrollResolve = null;
+        }
         break;
     }
   }
@@ -266,8 +354,13 @@ export class ReaderPanel {
 
   /** 清理资源 */
   private dispose(): void {
+    if (this.reloadTimer) {
+      clearTimeout(this.reloadTimer);
+    }
     this.messageListener.dispose();
     this.themeChangeListener.dispose();
+    this.viewStateListener.dispose();
+    this.fileWatcher.dispose();
     this.onDisposeCallback();
   }
 }

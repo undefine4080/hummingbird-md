@@ -46,7 +46,9 @@ export namespace MessageProtocol {
     | { type: "updateTheme"; data: { theme: Theme } }
     | { type: "highlightHeading"; data: { id: string } }
     | { type: "updateStyle"; data: ReadingStyleConfig }
-    | { type: "updateThemeName"; data: { themeName: ThemeName } };
+    | { type: "updateThemeName"; data: { themeName: ThemeName } }
+    | { type: "requestScrollPosition" }
+    | { type: "restoreScrollPosition"; data: { scrollY: number } };
 
   /** Webview → 插件的消息 */
   export type ToExtension =
@@ -56,7 +58,8 @@ export namespace MessageProtocol {
     | { type: "styleChanged"; data: ReadingStyleConfig }
     | { type: "themeNameChanged"; data: { themeName: ThemeName } }
     | { type: "openMermaidFullscreen"; data: { source: string } }
-    | { type: "ready" };
+    | { type: "ready" }
+    | { type: "scrollPosition"; data: { scrollY: number } };
 
   /** 主题类型 */
   export type Theme = "light" | "dark";
