@@ -50,6 +50,7 @@ export namespace MessageProtocol {
     | { type: "highlightHeading"; data: { id: string } }
     | { type: "updateStyle"; data: ReadingStyleConfig }
     | { type: "updateThemeName"; data: { themeName: ThemeName } }
+    | { type: "updateMermaidTheme"; data: { preset: MermaidThemePreset } }
     | { type: "requestScrollPosition" }
     | { type: "restoreScrollPosition"; data: { scrollY: number } };
 
@@ -63,6 +64,7 @@ export namespace MessageProtocol {
       }
     | { type: "styleChanged"; data: ReadingStyleConfig }
     | { type: "themeNameChanged"; data: { themeName: ThemeName } }
+    | { type: "mermaidThemeChanged"; data: { preset: MermaidThemePreset } }
     | { type: "openMermaidFullscreen"; data: { source: string } }
     | { type: "openLink"; data: { href: string } }
     | { type: "ready" }
@@ -91,6 +93,15 @@ export interface ReadingStyleConfig {
 export type Theme = "light" | "dark";
 
 /** 主题风格名称 */
+/** Mermaid 图表主题预设。 */
+export type MermaidThemePreset =
+  | "auto"
+  | "classic"
+  | "neutral"
+  | "forest"
+  | "monochrome"
+  | "handDrawn";
+
 export type ThemeName =
   | "classic"
   | "github"

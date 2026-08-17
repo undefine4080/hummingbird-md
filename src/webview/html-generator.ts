@@ -1,5 +1,12 @@
 import * as vscode from "vscode";
-import type { DocumentStats, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
+import type {
+  DocumentStats,
+  Heading,
+  MermaidThemePreset,
+  ReadingStyleConfig,
+  Theme,
+  ThemeName,
+} from "../types/index.js";
 
 /** 字体选项 */
 interface FontOption {
@@ -155,6 +162,7 @@ export function getReaderHtml(
   theme: Theme,
   readingStyle?: ReadingStyleConfig,
   themeName?: ThemeName,
+  mermaidThemePreset?: MermaidThemePreset,
 ): string {
   const nonce = getNonce();
   const katexStyleUri = webview.asWebviewUri(
@@ -224,7 +232,7 @@ export function getReaderHtml(
     <div class="code-fullscreen-content" id="code-fullscreen-content"></div>
   </div>
   <script nonce="${nonce}">
-    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, readingStyle: readingStyle ?? null, themeName: themeName ?? "classic" })};
+    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, readingStyle: readingStyle ?? null, themeName: themeName ?? "classic", mermaidThemePreset: mermaidThemePreset ?? "auto" })};
   </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
@@ -240,6 +248,7 @@ export function getTocHtml(
   stats?: DocumentStats,
   readingStyle?: ReadingStyleConfig,
   themeName?: ThemeName,
+  mermaidThemePreset?: MermaidThemePreset,
 ): string {
   const nonce = getNonce();
   const scriptUri = webview.asWebviewUri(
@@ -304,6 +313,20 @@ export function getTocHtml(
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-section-label">图表样式</div>
+        <div class="style-control">
+          <label class="style-label" for="mermaid-theme-preset">Mermaid 主题</label>
+          <select id="mermaid-theme-preset" class="style-select">
+            <option value="auto"${(mermaidThemePreset ?? "auto") === "auto" ? " selected" : ""}>跟随阅读主题</option>
+            <option value="classic"${mermaidThemePreset === "classic" ? " selected" : ""}>Classic</option>
+            <option value="neutral"${mermaidThemePreset === "neutral" ? " selected" : ""}>Neutral</option>
+            <option value="forest"${mermaidThemePreset === "forest" ? " selected" : ""}>Forest</option>
+            <option value="monochrome"${mermaidThemePreset === "monochrome" ? " selected" : ""}>Monochrome</option>
+            <option value="handDrawn"${mermaidThemePreset === "handDrawn" ? " selected" : ""}>手绘</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-section-label">阅读样式</div>
         <div class="settings-style-group">
           <div class="style-control">
@@ -334,7 +357,7 @@ export function getTocHtml(
   <div id="toc-root"></div>
   ${statsPanelHtml}
   <script nonce="${nonce}">
-    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, stats: stats ?? null, readingStyle: readingStyle ?? null, themeName: currentThemeName, fontGroups: getFontCandidatesForPlatform() })};
+    window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, stats: stats ?? null, readingStyle: readingStyle ?? null, themeName: currentThemeName, mermaidThemePreset: mermaidThemePreset ?? "auto", fontGroups: getFontCandidatesForPlatform() })};
   </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

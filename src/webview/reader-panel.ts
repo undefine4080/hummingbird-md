@@ -11,6 +11,7 @@ import type {
   DocumentStats,
   FontConfig,
   Heading,
+  MermaidThemePreset,
   ReadingStyleConfig,
   Theme,
   ThemeName,
@@ -83,6 +84,9 @@ export class ReaderPanel {
 
   /** 当前主题风格名称 */
   private currentThemeName: ThemeName = "classic";
+
+  /** 当前 Mermaid 主题预设 */
+  private currentMermaidThemePreset: MermaidThemePreset = "auto";
 
   /** 最后活跃的标题 ID，面板重新激活时恢复高亮 */
   private lastHighlightedId = "";
@@ -217,6 +221,17 @@ export class ReaderPanel {
     this.postMessage({ type: "updateThemeName", data: { themeName: name } });
   }
 
+  /** 设置 Mermaid 主题预设（面板创建时调用） */
+  public setMermaidThemePreset(preset: MermaidThemePreset): void {
+    this.currentMermaidThemePreset = preset;
+  }
+
+  /** 应用 Mermaid 主题预设（从 TOC 侧边栏触发） */
+  public applyMermaidThemePreset(preset: MermaidThemePreset): void {
+    this.currentMermaidThemePreset = preset;
+    this.postMessage({ type: "updateMermaidTheme", data: { preset } });
+  }
+
   /** 聚焦已有面板（当用户再次打开同一文档时） */
   public reveal(): void {
     this.panel.reveal();
@@ -315,6 +330,7 @@ export class ReaderPanel {
       theme,
       this.styleConfig ?? undefined,
       this.currentThemeName,
+      this.currentMermaidThemePreset,
     );
     console.log("[HummingbirdMD] HTML 已设置到 webview");
 
@@ -348,6 +364,10 @@ export class ReaderPanel {
 
       case "themeNameChanged":
         // 主题名称变更由 TOC 侧边栏发起，Reader 不直接处理
+        break;
+
+      case "mermaidThemeChanged":
+        // Mermaid 主题预设变更由 TOC 侧边栏发起，Reader 不直接处理
         break;
 
       case "ready":

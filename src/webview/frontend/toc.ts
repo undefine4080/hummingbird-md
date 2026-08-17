@@ -1,4 +1,10 @@
-import type { DocumentStats, Heading, ReadingStyleConfig, ThemeName } from "../../types/index.js";
+import type {
+  DocumentStats,
+  Heading,
+  MermaidThemePreset,
+  ReadingStyleConfig,
+  ThemeName,
+} from "../../types/index.js";
 import { onMessage, postMessage } from "./messaging.js";
 
 /** 字体选项（与 html-generator.ts 中 FontOption 对应） */
@@ -21,11 +27,9 @@ interface TocInitialData {
   stats: DocumentStats | null;
   readingStyle: ReadingStyleConfig | null;
   themeName: ThemeName;
+  mermaidThemePreset: MermaidThemePreset;
   fontGroups: FontGroup[];
 }
-
-/** 当前高亮的 heading ID */
-let _activeId: string | null = null;
 
 /** 将嵌套的 heading 树扁平化为一维数组 */
 function flattenHeadings(headings: Heading[]): Heading[] {
@@ -52,7 +56,7 @@ function createTocItem(heading: Heading): HTMLDivElement {
 /** 渲染目录列表到容器中 */
 function renderToc(container: HTMLElement, headings: Heading[]): void {
   // 清空现有内容
-  container.innerHTML = "";
+  container.replaceChildren();
 
   if (headings.length === 0) {
     const empty = document.createElement("div");
@@ -104,7 +108,6 @@ function setActiveItem(id: string): void {
     }
   }
 
-  _activeId = id;
 }
 
 /** 检查元素是否在可视区域内 */
@@ -136,6 +139,7 @@ function setupMessageListeners(): void {
       case "updateStyle":
         break;
       case "updateThemeName":
+      case "updateMermaidTheme":
         break;
       case "requestScrollPosition":
       case "restoreScrollPosition":
@@ -206,11 +210,13 @@ function initSettingsPanel(currentTheme: string): void {
 
   lightBtn?.addEventListener("click", (): void => {
     setActiveThemeBtn("light");
+    updateTheme("light");
     postMessage({ type: "themeChanged", data: { theme: "light" } });
   });
 
   darkBtn?.addEventListener("click", (): void => {
     setActiveThemeBtn("dark");
+    updateTheme("dark");
     postMessage({ type: "themeChanged", data: { theme: "dark" } });
   });
 }
@@ -299,7 +305,7 @@ function renderFontSelect(
   }
 
   // 构建 <option> 元素
-  select.innerHTML = "";
+  select.replaceChildren();
   const allValues = new Set<string>();
 
   for (const [label, fonts] of merged) {
@@ -342,6 +348,14 @@ function renderFontSelect(
 
 /** 初始化阅读样式控件 */
 function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: FontGroup[]): void {
+  const mermaidPreset = document.getElementById("mermaid-theme-preset") as HTMLSelectElement | null;
+  mermaidPreset?.addEventListener("change", (): void => {
+    postMessage({
+      type: "mermaidThemeChanged",
+      data: { preset: mermaidPreset.value as MermaidThemePreset },
+    });
+  });
+
   const style = savedStyle ?? DEFAULT_STYLE;
 
   const fontSize = document.getElementById("style-font-size") as HTMLInputElement | null;
@@ -457,21 +471,27 @@ function initDocStatsPanel(stats: DocumentStats): void {
   for (const item of items) {
     const el = document.createElement("div");
     el.className = "stat-item" + (item.full ? " stat-item-full" : "");
-    el.innerHTML = `<span class="stat-label">${item.label}</span><span class="stat-value${item.copyable ? " stat-path" : ""}" title="${item.copyable ? "点击复制" : item.value}">${item.value}</span>`;
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "stat-label";
+    labelEl.textContent = item.label;
+
+    const valueEl = document.createElement("span");
+    valueEl.className = "stat-value" + (item.copyable ? " stat-path" : "");
+    valueEl.title = item.copyable ? "点击复制" : item.value;
+    valueEl.textContent = item.value;
+    el.append(labelEl, valueEl);
 
     if (item.copyable) {
-      const valueEl = el.querySelector<HTMLElement>(".stat-value");
-      valueEl?.addEventListener("click", (): void => {
+      valueEl.addEventListener("click", (): void => {
         void navigator.clipboard.writeText(item.value).then((): void => {
-          if (valueEl) {
-            valueEl.classList.add("copied");
-            const orig = valueEl.textContent ?? "";
-            valueEl.textContent = "已复制";
-            setTimeout((): void => {
-              valueEl.classList.remove("copied");
-              valueEl.textContent = orig;
-            }, 1500);
-          }
+          valueEl.classList.add("copied");
+          const orig = valueEl.textContent ?? "";
+          valueEl.textContent = "已复制";
+          setTimeout((): void => {
+            valueEl.classList.remove("copied");
+            valueEl.textContent = orig;
+          }, 1500);
         });
       });
     }

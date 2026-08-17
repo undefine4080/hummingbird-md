@@ -1,11 +1,18 @@
 import mermaid from "mermaid";
-import type { ReadingStyleConfig, Theme } from "../../types/index.js";
+import type {
+  MermaidThemePreset,
+  ReadingStyleConfig,
+  Theme,
+} from "../../types/index.js";
+import { createMermaidConfig } from "./mermaid-theme.js";
 
 /** window.__INITIAL_DATA__ 的类型声明 */
 interface InitialData {
   headings: unknown;
   theme: Theme;
   readingStyle: ReadingStyleConfig | null;
+  themeName: string;
+  mermaidThemePreset: MermaidThemePreset;
 }
 
 declare global {
@@ -36,11 +43,30 @@ interface ViewerState {
   pinchStartScale: number;
 }
 
+/** 当前 Reader 主题，供 Mermaid 自动主题使用。 */
+let currentTheme: Theme = "light";
+
+/** 当前 Mermaid 主题预设。 */
+let currentMermaidThemePreset: MermaidThemePreset = "auto";
+
+/** Mermaid 重渲染请求序号，避免旧异步结果覆盖新主题。 */
+let renderRequestId = 0;
+
 /** 缓存 mermaid 版本号 */
 let mermaidVersion = "unknown";
 
 /** 当前全屏展示的图表索引（-1 表示未展示） */
 let currentDiagramIndex = -1;
+
+/** 将 Mermaid 返回的受控 SVG 字符串放入容器。 */
+function setSvgContent(container: HTMLElement, svgMarkup: string): void {
+  const parsed = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
+  const svg = parsed.documentElement;
+  if (svg.tagName.toLowerCase() !== "svg") {
+    return;
+  }
+  container.replaceChildren(document.importNode(svg, true));
+}
 
 /** 缓存所有渲染成功的 SVG 内容 */
 const diagramSvgs: string[] = [];
@@ -54,23 +80,20 @@ const vs: ViewerState = {
   dragStartTranslateX: 0, dragStartTranslateY: 0,
   isPinching: false, pinchStartDistance: 0, pinchStartScale: 1,
 };
-/**
- * 获取当前主题对应的 mermaid 主题名
- */
-function getMermaidThemeName(): "dark" | "default" {
-  const theme = window.__INITIAL_DATA__?.theme;
-  return theme === "dark" ? "dark" : "default";
+/** 应用当前主题和 Mermaid 预设。 */
+function applyMermaidConfig(): void {
+  mermaid.initialize(
+    createMermaidConfig(currentMermaidThemePreset, currentTheme),
+  );
 }
 
-/**
- * 初始化 mermaid 配置
- */
+/** 初始化 Mermaid 状态和版本号。 */
 function initMermaidConfig(): void {
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: getMermaidThemeName(),
-    securityLevel: "loose",
-  });
+  const data = window.__INITIAL_DATA__;
+  currentTheme = data?.theme ?? "light";
+  currentMermaidThemePreset = data?.mermaidThemePreset ?? "auto";
+  applyMermaidConfig();
+
   const v = (mermaid as unknown as Record<string, unknown>).version;
   if (typeof v === "string") {
     mermaidVersion = v;
@@ -181,7 +204,10 @@ function showFullscreen(diagramIndex: number): void {
   currentDiagramIndex = diagramIndex;
   title.textContent = `Mermaid 图表 #${diagramIndex + 1}`;
 
-  content.innerHTML = diagramSvgs[diagramIndex] ?? "";
+  content.replaceChildren();
+  if (diagramSvgs[diagramIndex]) {
+    setSvgContent(content, diagramSvgs[diagramIndex]);
+  }
   overlay.classList.add("active");
 
   // 重置变换状态
@@ -209,7 +235,7 @@ function closeFullscreen(): void {
     overlay.classList.remove("active");
   }
   if (content) {
-    content.innerHTML = "";
+    content.replaceChildren();
   }
   currentDiagramIndex = -1;
 }
@@ -435,16 +461,22 @@ function bindOverlayEvents(): void {
 async function copyWithFeedback(text: string, btn: HTMLButtonElement): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-    const originalHtml = btn.innerHTML;
+    const originalChildren = Array.from(btn.childNodes).map((node): Node => node.cloneNode(true));
     btn.classList.add("copied");
-    btn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg><span>已复制</span>';
+    btn.replaceChildren(createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg>'), document.createTextNode("已复制"));
     setTimeout((): void => {
       btn.classList.remove("copied");
-      btn.innerHTML = originalHtml;
+      btn.replaceChildren(...originalChildren);
     }, 1500);
   } catch {
     // clipboard API 不可用时静默失败
   }
+}
+
+/** 解析内置 SVG 图标字符串。 */
+function createSvgIcon(markup: string): SVGSVGElement {
+  const svg = new DOMParser().parseFromString(markup, "image/svg+xml").documentElement;
+  return document.importNode(svg, true) as unknown as SVGSVGElement;
 }
 
 /**
@@ -470,7 +502,10 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
   const copyErrorBtn = document.createElement("button");
   copyErrorBtn.className = "mermaid-error-btn";
   copyErrorBtn.title = "复制报错信息（含 Mermaid 版本号）";
-  copyErrorBtn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg><span>复制报错</span>';
+  copyErrorBtn.append(
+    createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg>'),
+    document.createTextNode("复制报错"),
+  );
   copyErrorBtn.addEventListener("click", (e: Event): void => {
     e.stopPropagation();
     const text = `Mermaid v${mermaidVersion}\nError: ${errorMessage}`;
@@ -482,7 +517,10 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
   const copySourceBtn = document.createElement("button");
   copySourceBtn.className = "mermaid-error-btn";
   copySourceBtn.title = "复制 Mermaid 源代码";
-  copySourceBtn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg><span>复制代码</span>';
+  copySourceBtn.append(
+    createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg>'),
+    document.createTextNode("复制代码"),
+  );
   copySourceBtn.addEventListener("click", (e: Event): void => {
     e.stopPropagation();
     void copyWithFeedback(source, copySourceBtn);
@@ -535,7 +573,7 @@ async function renderSingleDiagram(
     const container = document.createElement("div");
     container.className = "mermaid-container";
     container.id = diagramId;
-    container.innerHTML = result.svg;
+    setSvgContent(container, result.svg);
 
     el.parentNode.replaceChild(container, el);
 
@@ -588,19 +626,14 @@ export async function initMermaidRenderer(): Promise<void> {
   await renderMermaidBlocks();
 }
 
-/**
- * 切换主题后重新渲染所有 mermaid 图表
- */
-export async function rerenderAllDiagrams(theme: "dark" | "default"): Promise<void> {
+/** 重新渲染所有 Mermaid 图表并保留旧图表作为失败回退。 */
+async function rerenderDiagrams(): Promise<void> {
   if (diagramSources.length === 0) {
     return;
   }
 
-  mermaid.initialize({
-    startOnLoad: false,
-    theme,
-    securityLevel: "loose",
-  });
+  const requestId = ++renderRequestId;
+  applyMermaidConfig();
 
   for (let i = 0; i < diagramSources.length; i++) {
     const source = diagramSources[i];
@@ -608,17 +641,22 @@ export async function rerenderAllDiagrams(theme: "dark" | "default"): Promise<vo
       continue;
     }
 
-    const containerId = `mermaid-diagram-${i}`;
-    const container = document.getElementById(containerId);
+    const container = document.getElementById(`mermaid-diagram-${i}`);
     if (!container) {
       continue;
     }
 
     try {
-      const result = await mermaid.render(`mermaid-rerender-${Date.now()}-${i}`, source);
-      diagramSvgs[i] = result.svg;
-      container.innerHTML = result.svg;
+      const result = await mermaid.render(
+        `mermaid-rerender-${requestId}-${i}`,
+        source,
+      );
+      if (requestId !== renderRequestId) {
+        return;
+      }
 
+      diagramSvgs[i] = result.svg;
+      setSvgContent(container, result.svg);
       if (result.bindFunctions) {
         result.bindFunctions(container);
       }
@@ -626,4 +664,27 @@ export async function rerenderAllDiagrams(theme: "dark" | "default"): Promise<vo
       // 重新渲染失败时保持原状
     }
   }
+
+  if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
+    const fullscreenContent = document.getElementById("mermaid-fullscreen-content");
+    if (fullscreenContent) {
+      fullscreenContent.replaceChildren();
+      setSvgContent(fullscreenContent, diagramSvgs[currentDiagramIndex]);
+      applyTransform();
+    }
+  }
+}
+
+/** 更新 VS Code 亮暗主题并重新渲染 Mermaid。 */
+export async function updateMermaidTheme(theme: Theme): Promise<void> {
+  currentTheme = theme;
+  await rerenderDiagrams();
+}
+
+/** 更新 Mermaid 主题预设并重新渲染图表。 */
+export async function updateMermaidThemePreset(
+  preset: MermaidThemePreset,
+): Promise<void> {
+  currentMermaidThemePreset = preset;
+  await rerenderDiagrams();
 }

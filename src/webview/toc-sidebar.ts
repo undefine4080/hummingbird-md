@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type {
   DocumentStats,
   Heading,
+  MermaidThemePreset,
   ReadingStyleConfig,
   Theme,
   ThemeName,
@@ -38,6 +39,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 缓存的主题风格名称 */
   private pendingThemeName: ThemeName = "classic";
 
+  /** 缓存的 Mermaid 主题预设 */
+  private pendingMermaidThemePreset: MermaidThemePreset = "auto";
+
   /** 标题点击回调，通知 ReaderPanel 滚动到对应位置 */
   private onHeadingClicked: ((id: string) => void) | null = null;
 
@@ -49,6 +53,11 @@ export class TocSidebar implements vscode.WebviewViewProvider {
 
   /** 主题风格变更回调，通知 ReaderPanel 切换主题 */
   private onThemeNameChanged: ((name: ThemeName) => void) | null = null;
+
+  /** Mermaid 主题预设变更回调 */
+  private onMermaidThemeChanged:
+    | ((preset: MermaidThemePreset) => void)
+    | null = null;
 
   /** 消息监听器 */
   private messageListener: vscode.Disposable | null = null;
@@ -79,6 +88,13 @@ export class TocSidebar implements vscode.WebviewViewProvider {
     this.onThemeNameChanged = callback;
   }
 
+  /** 设置 Mermaid 主题预设变更回调 */
+  public setOnMermaidThemeChanged(
+    callback: (preset: MermaidThemePreset) => void,
+  ): void {
+    this.onMermaidThemeChanged = callback;
+  }
+
   /** 设置当前阅读样式配置（用于 HTML 生成） */
   public setStyleConfig(config: ReadingStyleConfig): void {
     this.pendingStyleConfig = config;
@@ -87,6 +103,11 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   /** 设置当前主题风格名称（用于 HTML 生成） */
   public setThemeName(name: ThemeName): void {
     this.pendingThemeName = name;
+  }
+
+  /** 设置当前 Mermaid 主题预设（用于 HTML 生成） */
+  public setMermaidThemePreset(preset: MermaidThemePreset): void {
+    this.pendingMermaidThemePreset = preset;
   }
 
   /** WebviewViewProvider 接口实现：解析 WebviewView */
@@ -112,6 +133,7 @@ export class TocSidebar implements vscode.WebviewViewProvider {
         this.pendingStats ?? undefined,
         this.pendingStyleConfig ?? undefined,
         this.pendingThemeName,
+        this.pendingMermaidThemePreset,
       );
     } else {
       this.view.webview.html = this.getEmptyHtml();
@@ -159,6 +181,7 @@ export class TocSidebar implements vscode.WebviewViewProvider {
       stats,
       this.pendingStyleConfig ?? undefined,
       this.pendingThemeName,
+      this.pendingMermaidThemePreset,
     );
     console.log("[HummingbirdMD TOC] HTML 已设置到 TOC webview");
   }
@@ -196,6 +219,7 @@ export class TocSidebar implements vscode.WebviewViewProvider {
         break;
 
       case "themeChanged":
+        this.pendingTheme = message.data.theme;
         this.onThemeChanged?.(message.data.theme);
         break;
 
@@ -214,6 +238,11 @@ export class TocSidebar implements vscode.WebviewViewProvider {
       case "themeNameChanged":
         this.pendingThemeName = message.data.themeName;
         this.onThemeNameChanged?.(message.data.themeName);
+        break;
+
+      case "mermaidThemeChanged":
+        this.pendingMermaidThemePreset = message.data.preset;
+        this.onMermaidThemeChanged?.(message.data.preset);
         break;
     }
   }

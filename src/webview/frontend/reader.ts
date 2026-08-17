@@ -115,6 +115,8 @@ function handleMessage(message: ToWebview): void {
     case "updateThemeName":
       document.documentElement.dataset.themeName = message.data.themeName;
       break;
+    case "updateMermaidTheme":
+      break;
     case "highlightHeading":
       scrollToHeading(message.data.id, false);
       break;

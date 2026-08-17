@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands/register.js";
-import type { ReadingStyleConfig, ThemeName } from "./types/index.js";
+import type {
+  MermaidThemePreset,
+  ReadingStyleConfig,
+  ThemeName,
+} from "./types/index.js";
 import { ReaderPanel } from "./webview/reader-panel.js";
 import { TocSidebar } from "./webview/toc-sidebar.js";
 import { initHighlighter } from "./markdown/parser.js";
@@ -8,6 +12,7 @@ import { initHighlighter } from "./markdown/parser.js";
 /** 阅读样式配置存储 key */
 const STYLE_CONFIG_KEY = "hummingbird-md.readingStyle";
 const THEME_NAME_KEY = "hummingbird-md.themeName";
+const MERMAID_THEME_KEY = "hummingbird-md.mermaidTheme";
 
 /** 默认阅读样式配置 */
 const DEFAULT_STYLE: ReadingStyleConfig = {
@@ -23,6 +28,9 @@ let currentStyle: ReadingStyleConfig = { ...DEFAULT_STYLE };
 
 /** 当前主题风格名称 */
 let currentThemeName: ThemeName = "classic";
+
+/** 当前 Mermaid 主题预设 */
+let currentMermaidThemePreset: MermaidThemePreset = "auto";
 
 /** 活跃的阅读器面板，key 为文档 URI 路径 */
 const activePanels = new Map<string, ReaderPanel>();
@@ -47,10 +55,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     currentThemeName = savedThemeName;
   }
 
+  // 加载保存的 Mermaid 主题预设
+  const savedMermaidThemePreset = context.globalState.get<MermaidThemePreset>(MERMAID_THEME_KEY);
+  if (savedMermaidThemePreset) {
+    currentMermaidThemePreset = savedMermaidThemePreset;
+  }
+
   // 注册 TOC 侧边栏 Provider
   tocSidebar = new TocSidebar(context.extensionUri);
   tocSidebar.setStyleConfig(currentStyle);
   tocSidebar.setThemeName(currentThemeName);
+  tocSidebar.setMermaidThemePreset(currentMermaidThemePreset);
 
   // 设置 TOC 侧边栏标题点击回调：通知活跃的 ReaderPanel 滚动
   tocSidebar.setOnHeadingClicked((id: string): void => {
@@ -102,6 +117,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     tocSidebar.setThemeName(name);
     for (const panel of activePanels.values()) {
       panel.applyThemeName(name);
+    }
+  });
+
+  // 设置 Mermaid 主题预设变更回调
+  tocSidebar.setOnMermaidThemeChanged((preset: MermaidThemePreset): void => {
+    currentMermaidThemePreset = preset;
+    void context.globalState.update(MERMAID_THEME_KEY, preset);
+    tocSidebar.setMermaidThemePreset(preset);
+    for (const panel of activePanels.values()) {
+      panel.applyMermaidThemePreset(preset);
     }
   });
 
@@ -160,6 +185,7 @@ async function openReader(
   // 设置当前阅读样式
   panel.setStyleConfig(currentStyle);
   panel.setThemeName(currentThemeName);
+  panel.setMermaidThemePreset(currentMermaidThemePreset);
 
   await panel.loadAndRender();
 
