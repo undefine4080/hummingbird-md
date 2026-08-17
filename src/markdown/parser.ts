@@ -39,6 +39,13 @@ const md = new MarkdownIt({
 
 // 保存原始 fence 渲染器，用于 Shiki 未初始化或语言不支持时回退
 const defaultFenceRenderer = md.renderer.rules.fence;
+const defaultImageRenderer = md.renderer.rules.image;
+
+/** Markdown 渲染时与当前文档相关的资源解析配置。 */
+export interface MarkdownRenderOptions {
+  /** 将 Markdown 图片地址转换为 Webview 可访问的地址。 */
+  resolveImageUrl?: (source: string) => string;
+}
 
 // 自定义 fence 渲染器：mermaid → 前端渲染，其他 → Shiki 语法高亮
 md.renderer.rules.fence = (tokens, idx, options, env, self): string => {
@@ -68,6 +75,21 @@ md.renderer.rules.fence = (tokens, idx, options, env, self): string => {
     return defaultFenceRenderer(tokens, idx, options, env, self);
   }
   return "";
+};
+
+// 解析本地图片地址，外部和 data/blob 地址保持原样。
+md.renderer.rules.image = (tokens, idx, options, env, self): string => {
+  const token = tokens[idx];
+  const source = token.attrGet("src");
+  const renderOptions = env as MarkdownRenderOptions;
+  if (source && renderOptions.resolveImageUrl) {
+    token.attrSet("src", renderOptions.resolveImageUrl(source));
+  }
+
+  if (defaultImageRenderer) {
+    return defaultImageRenderer(tokens, idx, options, env, self);
+  }
+  return self.renderToken(tokens, idx, options);
 };
 
 /** 为标题生成锚点 ID */
@@ -134,8 +156,11 @@ function collectFenceLanguages(tokens: MdToken[]): string[] {
 }
 
 /** 解析 Markdown 文本，返回渲染 HTML 和目录树 */
-export async function parseMarkdown(source: string): Promise<ParsedDocument> {
-  const tokens = md.parse(source, {});
+export async function parseMarkdown(
+  source: string,
+  renderOptions: MarkdownRenderOptions = {},
+): Promise<ParsedDocument> {
+  const tokens = md.parse(source, renderOptions);
 
   // 按需加载代码块中使用的语言
   if (highlighter) {
@@ -155,7 +180,7 @@ export async function parseMarkdown(source: string): Promise<ParsedDocument> {
   }
 
   const headings = extractAndApplyHeadingIds(tokens);
-  const html = md.renderer.render(tokens, md.options, {});
+  const html = md.renderer.render(tokens, md.options, renderOptions);
 
   return { source, html, headings };
 }

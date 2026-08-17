@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { parseMarkdown } from "../markdown/parser.js";
+import { createImageUrlResolver, getDocumentResourceRoots } from "../markdown/resource-resolver.js";
 import type { DocumentStats, FontConfig, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
 import type { MessageProtocol } from "../types/index.js";
 import { computeDocStats } from "../utils/doc-stats.js";
@@ -87,7 +88,7 @@ export class ReaderPanel {
     // 设置 Webview 选项
     this.panel.webview.options = {
       enableScripts: true,
-      localResourceRoots: this.getLocalResourceRoots(uri),
+      localResourceRoots: getDocumentResourceRoots(uri, this.extensionUri),
     };
 
     // 监听 Webview 消息
@@ -236,7 +237,7 @@ export class ReaderPanel {
     this.currentUri = uri;
     this.panel.webview.options = {
       ...this.panel.webview.options,
-      localResourceRoots: this.getLocalResourceRoots(uri),
+      localResourceRoots: getDocumentResourceRoots(uri, this.extensionUri),
     };
 
     const fileName = uri.path.split("/").pop() ?? "未命名";
@@ -260,7 +261,9 @@ export class ReaderPanel {
     const source = new TextDecoder("utf-8").decode(content);
     console.log("[HummingbirdMD] 文件读取完成，长度:", source.length);
 
-    const doc = await parseMarkdown(source);
+    const doc = await parseMarkdown(source, {
+      resolveImageUrl: createImageUrlResolver(this.currentUri, this.panel.webview),
+    });
     console.log("[HummingbirdMD] Markdown 解析完成，标题数:", doc.headings.length);
 
     const stats = computeDocStats(
@@ -344,12 +347,6 @@ export class ReaderPanel {
   /** 向 Webview 发送消息 */
   private postMessage(message: MessageProtocol.ToWebview): void {
     void this.panel.webview.postMessage(message);
-  }
-
-  /** 获取 localResourceRoots，包含扩展目录和文档所在目录 */
-  private getLocalResourceRoots(uri: vscode.Uri): vscode.Uri[] {
-    const docDir = vscode.Uri.file(uri.path.split("/").slice(0, -1).join("/"));
-    return [this.extensionUri, docDir];
   }
 
   /** 清理资源 */
