@@ -170,6 +170,8 @@ md.renderer.rules.math_bracket_block = (tokens, idx): string => {
 // 保存原始 fence 渲染器，用于 Shiki 未初始化或语言不支持时回退
 const defaultFenceRenderer = md.renderer.rules.fence;
 const defaultImageRenderer = md.renderer.rules.image;
+const defaultTableOpenRenderer = md.renderer.rules.table_open;
+const defaultTableCloseRenderer = md.renderer.rules.table_close;
 
 /** Markdown 渲染时与当前文档相关的资源解析配置。 */
 export interface MarkdownRenderOptions {
@@ -220,6 +222,21 @@ md.renderer.rules.image = (tokens, idx, options, env, self): string => {
     return defaultImageRenderer(tokens, idx, options, env, self);
   }
   return self.renderToken(tokens, idx, options);
+};
+
+// 为宽表格增加局部横向滚动容器，避免撑开阅读器主容器。
+md.renderer.rules.table_open = (tokens, idx, options, env, self): string => {
+  const tableHtml = defaultTableOpenRenderer
+    ? defaultTableOpenRenderer(tokens, idx, options, env, self)
+    : self.renderToken(tokens, idx, options);
+  return `<div class="table-scroll" role="region" tabindex="0" aria-label="可横向滚动的表格">${tableHtml}`;
+};
+
+md.renderer.rules.table_close = (tokens, idx, options, env, self): string => {
+  const tableHtml = defaultTableCloseRenderer
+    ? defaultTableCloseRenderer(tokens, idx, options, env, self)
+    : self.renderToken(tokens, idx, options);
+  return `${tableHtml}</div>`;
 };
 
 /** 为标题生成锚点 ID */

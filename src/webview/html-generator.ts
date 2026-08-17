@@ -474,6 +474,7 @@ function getReaderStyles(): string {
     body {
       background: var(--bg-primary);
       color: var(--text-primary);
+      overflow-x: hidden;
       font-family: var(--hb-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
       font-size: var(--hb-font-size, 16px);
       font-weight: var(--hb-font-weight, 400);
@@ -524,6 +525,17 @@ function getReaderStyles(): string {
     li { margin-bottom: 0.3em; }
 
     /* 表格 */
+    .table-scroll {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin-bottom: 1em;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+    .table-scroll > table { width: max-content; min-width: 100%; margin-bottom: 0; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
     th, td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
     th { background: var(--bg-secondary); font-weight: 600; }
