@@ -1,7 +1,20 @@
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { parseMarkdown } from "../markdown/parser.js";
-import { createImageUrlResolver, getDocumentResourceRoots } from "../markdown/resource-resolver.js";
-import type { DocumentStats, FontConfig, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
+import { resolveLinkTarget } from "../markdown/link-resolver.js";
+import {
+  createImageUrlResolver,
+  getDocumentDirectoryUri,
+  getDocumentResourceRoots,
+} from "../markdown/resource-resolver.js";
+import type {
+  DocumentStats,
+  FontConfig,
+  Heading,
+  ReadingStyleConfig,
+  Theme,
+  ThemeName,
+} from "../types/index.js";
 import type { MessageProtocol } from "../types/index.js";
 import { computeDocStats } from "../utils/doc-stats.js";
 import { getReaderHtml } from "./html-generator.js";
@@ -34,7 +47,9 @@ export class ReaderPanel {
   private onHeadingChanged: ((id: string) => void) | null = null;
 
   /** 标题加载完成回调，通知 TOC 侧边栏更新目录树 */
-  private onHeadingsLoaded: ((headings: Heading[], theme: Theme, stats: DocumentStats) => void) | null = null;
+  private onHeadingsLoaded:
+    | ((headings: Heading[], theme: Theme, stats: DocumentStats) => void)
+    | null = null;
 
   /** VSCode 主题变化监听器的 Disposable */
   private themeChangeListener: vscode.Disposable;
@@ -145,7 +160,13 @@ export class ReaderPanel {
       },
     );
 
-    const instance = new ReaderPanel(panel, extensionUri, uri, context, onDispose);
+    const instance = new ReaderPanel(
+      panel,
+      extensionUri,
+      uri,
+      context,
+      onDispose,
+    );
     console.log("[HummingbirdMD] 面板实例创建完成:", fileName);
     return instance;
   }
@@ -156,7 +177,9 @@ export class ReaderPanel {
   }
 
   /** 设置标题加载完成回调 */
-  public setOnHeadingsLoaded(callback: (headings: Heading[], theme: Theme, stats: DocumentStats) => void): void {
+  public setOnHeadingsLoaded(
+    callback: (headings: Heading[], theme: Theme, stats: DocumentStats) => void,
+  ): void {
     this.onHeadingsLoaded = callback;
   }
 
@@ -262,9 +285,15 @@ export class ReaderPanel {
     console.log("[HummingbirdMD] 文件读取完成，长度:", source.length);
 
     const doc = await parseMarkdown(source, {
-      resolveImageUrl: createImageUrlResolver(this.currentUri, this.panel.webview),
+      resolveImageUrl: createImageUrlResolver(
+        this.currentUri,
+        this.panel.webview,
+      ),
     });
-    console.log("[HummingbirdMD] Markdown 解析完成，标题数:", doc.headings.length);
+    console.log(
+      "[HummingbirdMD] Markdown 解析完成，标题数:",
+      doc.headings.length,
+    );
 
     const stats = computeDocStats(
       source,
@@ -289,7 +318,10 @@ export class ReaderPanel {
     );
     console.log("[HummingbirdMD] HTML 已设置到 webview");
 
-    console.log("[HummingbirdMD] onHeadingsLoaded 回调是否存在:", !!this.onHeadingsLoaded);
+    console.log(
+      "[HummingbirdMD] onHeadingsLoaded 回调是否存在:",
+      !!this.onHeadingsLoaded,
+    );
     this.onHeadingsLoaded?.(doc.headings, theme, stats);
   }
 
@@ -325,6 +357,10 @@ export class ReaderPanel {
       case "openMermaidFullscreen":
         break;
 
+      case "openLink":
+        void this.openLink(message.data.href);
+        break;
+
       case "scrollPosition":
         if (this.scrollResolve) {
           this.scrollResolve(message.data.scrollY);
@@ -332,6 +368,118 @@ export class ReaderPanel {
         }
         break;
     }
+  }
+
+  /** 处理 Reader 中的 Markdown 链接。 */
+  private async openLink(href: string): Promise<void> {
+    const target = resolveLinkTarget(this.currentUri, href);
+    if (target.kind === "anchor") {
+      this.postMessage({
+        type: "highlightHeading",
+        data: { id: target.fragment ?? "" },
+      });
+      return;
+    }
+
+    if (target.kind === "external" && target.uri) {
+      await vscode.env.openExternal(target.uri);
+      return;
+    }
+
+    if (target.kind !== "file" || !target.uri) {
+      void vscode.window.showWarningMessage("不支持打开此链接");
+      return;
+    }
+
+    if (
+      target.uri.toString() === this.currentUri.toString() &&
+      target.fragment &&
+      !target.location
+    ) {
+      this.onHeadingChanged?.(target.fragment);
+      this.postMessage({
+        type: "highlightHeading",
+        data: { id: target.fragment },
+      });
+      return;
+    }
+
+    if (!this.isAllowedFileUri(target.uri)) {
+      void vscode.window.showWarningMessage(
+        "链接目标不在当前工作区或文档目录内",
+      );
+      return;
+    }
+
+    try {
+      await vscode.workspace.fs.stat(target.uri);
+      const selection = target.location
+        ? await this.createLinkSelection(target.uri, target.location)
+        : undefined;
+      await vscode.window.showTextDocument(target.uri, {
+        viewColumn: vscode.ViewColumn.Beside,
+        preview: true,
+        selection,
+      });
+    } catch {
+      void vscode.window.showWarningMessage(
+        `找不到链接目标：${target.uri.fsPath}`,
+      );
+    }
+  }
+
+  /** 限制本地链接只能访问当前文档目录或工作区。 */
+  private isAllowedFileUri(uri: vscode.Uri): boolean {
+    const documentDirectory = getDocumentDirectoryUri(this.currentUri);
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+      this.currentUri,
+    );
+    const normalizedPath = path.resolve(uri.fsPath);
+    const roots = [
+      documentDirectory.fsPath,
+      ...(workspaceFolder ? [workspaceFolder.uri.fsPath] : []),
+    ].map((root): string => path.resolve(root));
+    return roots.some(
+      (root): boolean =>
+        normalizedPath === root ||
+        normalizedPath.startsWith(`${root}${path.sep}`),
+    );
+  }
+
+  /** 根据链接位置创建 VS Code 编辑器选择范围。 */
+  private async createLinkSelection(
+    uri: vscode.Uri,
+    location: {
+      startLine?: number;
+      startColumn?: number;
+      endLine?: number;
+      endColumn?: number;
+    },
+  ): Promise<vscode.Range> {
+    const document = await vscode.workspace.openTextDocument(uri);
+    const startLine = Math.max(0, (location.startLine ?? 1) - 1);
+    const startColumn = Math.max(0, (location.startColumn ?? 1) - 1);
+    const endLine = Math.max(
+      0,
+      (location.endLine ?? location.startLine ?? 1) - 1,
+    );
+    const endColumn = Math.max(
+      0,
+      location.endColumn !== undefined
+        ? location.endColumn - 1
+        : location.endLine !== undefined
+          ? document.lineAt(endLine).range.end.character
+          : location.startColumn !== undefined
+            ? location.startColumn - 1
+            : 0,
+    );
+    const start = document.validatePosition(
+      new vscode.Position(startLine, startColumn),
+    );
+    const end = document.validatePosition(
+      new vscode.Position(endLine, endColumn),
+    );
+    return new vscode.Range(start, end);
   }
 
   /** 保存字体配置到 globalState */

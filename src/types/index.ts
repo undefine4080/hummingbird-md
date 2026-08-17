@@ -42,7 +42,10 @@ export interface DocumentStats {
 export namespace MessageProtocol {
   /** 插件 → Webview 的消息 */
   export type ToWebview =
-    | { type: "init"; data: { html: string; headings: Heading[]; theme: Theme } }
+    | {
+        type: "init";
+        data: { html: string; headings: Heading[]; theme: Theme };
+      }
     | { type: "updateTheme"; data: { theme: Theme } }
     | { type: "highlightHeading"; data: { id: string } }
     | { type: "updateStyle"; data: ReadingStyleConfig }
@@ -54,10 +57,14 @@ export namespace MessageProtocol {
   export type ToExtension =
     | { type: "headingChanged"; data: { id: string } }
     | { type: "themeChanged"; data: { theme: Theme } }
-    | { type: "fontChanged"; data: { fontFamily: string; fontSize: number; fontWeight: number } }
+    | {
+        type: "fontChanged";
+        data: { fontFamily: string; fontSize: number; fontWeight: number };
+      }
     | { type: "styleChanged"; data: ReadingStyleConfig }
     | { type: "themeNameChanged"; data: { themeName: ThemeName } }
     | { type: "openMermaidFullscreen"; data: { source: string } }
+    | { type: "openLink"; data: { href: string } }
     | { type: "ready" }
     | { type: "scrollPosition"; data: { scrollY: number } };
 

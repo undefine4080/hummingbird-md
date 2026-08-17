@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import type { DocumentStats, Heading, ReadingStyleConfig, Theme, ThemeName } from "../types/index.js";
+import type {
+  DocumentStats,
+  Heading,
+  ReadingStyleConfig,
+  Theme,
+  ThemeName,
+} from "../types/index.js";
 import type { MessageProtocol } from "../types/index.js";
 import { getTocHtml } from "./html-generator.js";
 
@@ -62,7 +68,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   }
 
   /** 设置阅读样式变更回调 */
-  public setOnStyleChanged(callback: (config: ReadingStyleConfig) => void): void {
+  public setOnStyleChanged(
+    callback: (config: ReadingStyleConfig) => void,
+  ): void {
     this.onStyleChanged = callback;
   }
 
@@ -82,9 +90,7 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   }
 
   /** WebviewViewProvider 接口实现：解析 WebviewView */
-  public resolveWebviewView(
-    webviewView: vscode.WebviewView,
-  ): void {
+  public resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
 
     this.view.webview.options = {
@@ -94,7 +100,10 @@ export class TocSidebar implements vscode.WebviewViewProvider {
 
     // 如果有缓存数据则直接渲染，否则显示空状态
     if (this.pendingHeadings && this.pendingTheme) {
-      console.log("[HummingbirdMD TOC] resolveWebviewView 使用缓存数据渲染，标题数:", this.pendingHeadings.length);
+      console.log(
+        "[HummingbirdMD TOC] resolveWebviewView 使用缓存数据渲染，标题数:",
+        this.pendingHeadings.length,
+      );
       this.view.webview.html = getTocHtml(
         this.view.webview,
         this.extensionUri,
@@ -118,8 +127,17 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   }
 
   /** 更新 TOC 内容（当文档加载或切换时调用） */
-  public updateHeadings(headings: Heading[], theme: Theme, stats?: DocumentStats): void {
-    console.log("[HummingbirdMD TOC] updateHeadings 被调用，标题数:", headings.length, "view 是否存在:", !!this.view);
+  public updateHeadings(
+    headings: Heading[],
+    theme: Theme,
+    stats?: DocumentStats,
+  ): void {
+    console.log(
+      "[HummingbirdMD TOC] updateHeadings 被调用，标题数:",
+      headings.length,
+      "view 是否存在:",
+      !!this.view,
+    );
 
     // 缓存数据，供 resolveWebviewView 使用
     this.pendingHeadings = headings;
@@ -127,7 +145,9 @@ export class TocSidebar implements vscode.WebviewViewProvider {
     this.pendingStats = stats ?? null;
 
     if (!this.view) {
-      console.log("[HummingbirdMD TOC] view 为 null，已缓存数据，等待 view 就绪");
+      console.log(
+        "[HummingbirdMD TOC] view 为 null，已缓存数据，等待 view 就绪",
+      );
       return;
     }
 
@@ -157,11 +177,17 @@ export class TocSidebar implements vscode.WebviewViewProvider {
 
   /** 处理来自 Webview 的消息 */
   private handleMessage(message: MessageProtocol.ToExtension): void {
-    console.log("[HummingbirdMD TOC] 收到 webview 消息:", JSON.stringify(message));
+    console.log(
+      "[HummingbirdMD TOC] 收到 webview 消息:",
+      JSON.stringify(message),
+    );
     switch (message.type) {
       case "headingChanged":
         // TOC 中点击标题，通知 ReaderPanel 滚动到对应位置
-        console.log("[HummingbirdMD TOC] 收到 headingChanged 消息，id:", message.data.id);
+        console.log(
+          "[HummingbirdMD TOC] 收到 headingChanged 消息，id:",
+          message.data.id,
+        );
         this.onHeadingClicked?.(message.data.id);
         break;
 
@@ -175,6 +201,7 @@ export class TocSidebar implements vscode.WebviewViewProvider {
 
       case "fontChanged":
       case "openMermaidFullscreen":
+      case "openLink":
         break;
 
       case "styleChanged":

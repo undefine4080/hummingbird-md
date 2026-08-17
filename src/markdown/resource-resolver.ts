@@ -10,23 +10,25 @@ export function resolveDocumentResource(
     return null;
   }
 
-  const parsed = vscode.Uri.parse(trimmedSource);
-  if (parsed.scheme && parsed.scheme !== "file") {
-    return null;
+  if (hasUriScheme(trimmedSource) && !isWindowsAbsolutePath(trimmedSource)) {
+    const parsed = vscode.Uri.parse(trimmedSource);
+    return parsed.scheme === "file" ? parsed : null;
   }
 
-  if (parsed.scheme === "file") {
-    return parsed;
+  const relative = splitResourceSource(trimmedSource);
+  const resourcePath = decodeUriComponentSafely(relative.path);
+  if (isWindowsAbsolutePath(resourcePath)) {
+    return vscode.Uri.file(resourcePath);
   }
 
   const documentDirectory = getDocumentDirectoryUri(documentUri);
-  const resourceUri = parsed.path.startsWith("/")
-    ? documentUri.with({ path: parsed.path })
-    : vscode.Uri.joinPath(documentDirectory, parsed.path);
+  const resourceUri = resourcePath.startsWith("/")
+    ? documentUri.with({ path: resourcePath })
+    : vscode.Uri.joinPath(documentDirectory, resourcePath);
 
   return resourceUri.with({
-    query: parsed.query,
-    fragment: parsed.fragment,
+    query: relative.query,
+    fragment: relative.fragment,
   });
 }
 
@@ -47,7 +49,8 @@ export function createImageUrlResolver(
 /** 获取文档所在目录，同时保留远程工作区的 URI scheme 和 authority。 */
 export function getDocumentDirectoryUri(documentUri: vscode.Uri): vscode.Uri {
   const lastSlash = documentUri.path.lastIndexOf("/");
-  const directoryPath = lastSlash >= 0 ? documentUri.path.slice(0, lastSlash) || "/" : "/";
+  const directoryPath =
+    lastSlash >= 0 ? documentUri.path.slice(0, lastSlash) || "/" : "/";
   return documentUri.with({ path: directoryPath, query: "", fragment: "" });
 }
 
@@ -67,4 +70,44 @@ export function getDocumentResourceRoots(
 /** 判断是否应当交给浏览器直接加载的资源地址。 */
 function isRemoteResource(source: string): boolean {
   return /^(?:https?:|data:|blob:|\/\/|#)/i.test(source);
+}
+
+/** 判断是否为显式 URI scheme。 */
+function hasUriScheme(source: string): boolean {
+  return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(source);
+}
+
+/** 判断是否为 Windows 盘符或 UNC 形式的绝对路径。 */
+function isWindowsAbsolutePath(source: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(source) || source.startsWith("\\\\");
+}
+
+/** 拆分本地资源路径中的 query 和 fragment。 */
+function splitResourceSource(source: string): {
+  path: string;
+  query: string;
+  fragment: string;
+} {
+  const hashIndex = source.indexOf("#");
+  const fragmentStart = hashIndex >= 0 ? hashIndex : source.length;
+  const queryIndex = source.indexOf("?");
+  const queryStart =
+    queryIndex >= 0 && queryIndex < fragmentStart ? queryIndex : fragmentStart;
+  return {
+    path: source.slice(0, queryStart),
+    query:
+      queryStart < fragmentStart
+        ? source.slice(queryStart + 1, fragmentStart)
+        : "",
+    fragment: hashIndex >= 0 ? source.slice(hashIndex + 1) : "",
+  };
+}
+
+/** 解码 URI 组件，遇到非法编码时保留原始文本。 */
+function decodeUriComponentSafely(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

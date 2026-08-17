@@ -4,7 +4,12 @@
  * 负责：滚动检测（Intersection Observer）、字体配置、主题切换、Heading 高亮。
  */
 
-import type { FontConfig, MessageProtocol, ReadingStyleConfig, Theme } from "../../types/index.js";
+import type {
+  FontConfig,
+  MessageProtocol,
+  ReadingStyleConfig,
+  Theme,
+} from "../../types/index.js";
 import { onMessage, postMessage } from "./messaging.js";
 
 type ToWebview = MessageProtocol.ToWebview;
@@ -18,9 +23,6 @@ let suppressHeadingChange = false;
 /** Intersection Observer 实例 */
 let headingObserver: IntersectionObserver | null = null;
 
-/** 消息监听器卸载函数（预留给后续销毁场景使用） */
-let _detachMessageListener: (() => void) | null = null;
-
 /**
  * 初始化阅读器
  *
@@ -30,6 +32,7 @@ export function initReader(): void {
   setupHeadingObserver();
   setupMessageListeners();
   initCodeBlockCopy();
+  initLinkNavigation();
 
   // 应用保存的阅读样式配置
   const data = window.__INITIAL_DATA__;
@@ -89,12 +92,16 @@ function getVisibleHeadings(): HTMLElement[] {
   if (!container) {
     return [];
   }
-  return Array.from(container.querySelectorAll<HTMLElement>("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]"));
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      "h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]",
+    ),
+  );
 }
 
 /** 监听来自插件主进程的消息 */
 function setupMessageListeners(): void {
-  _detachMessageListener = onMessage(handleMessage);
+  onMessage(handleMessage);
 }
 
 /** 处理插件主进程发来的消息 */
@@ -109,13 +116,19 @@ function handleMessage(message: ToWebview): void {
       document.documentElement.dataset.themeName = message.data.themeName;
       break;
     case "highlightHeading":
-      scrollToHeading(message.data.id);
+      scrollToHeading(message.data.id, false);
       break;
     case "requestScrollPosition":
-      postMessage({ type: "scrollPosition", data: { scrollY: window.scrollY } });
+      postMessage({
+        type: "scrollPosition",
+        data: { scrollY: window.scrollY },
+      });
       break;
     case "restoreScrollPosition":
-      window.scrollTo({ top: message.data.scrollY, behavior: "instant" as ScrollBehavior });
+      window.scrollTo({
+        top: message.data.scrollY,
+        behavior: "instant" as ScrollBehavior,
+      });
       break;
     case "init":
       break;
@@ -144,7 +157,10 @@ export function applyReadingStyle(config: ReadingStyleConfig): void {
   root.style.setProperty("--hb-font-size", `${config.fontSize}px`);
   root.style.setProperty("--hb-font-weight", `${config.fontWeight}`);
   root.style.setProperty("--hb-line-height", String(config.lineHeight));
-  root.style.setProperty("--hb-paragraph-spacing", `${config.paragraphSpacing}em`);
+  root.style.setProperty(
+    "--hb-paragraph-spacing",
+    `${config.paragraphSpacing}em`,
+  );
 }
 
 /**
@@ -152,7 +168,7 @@ export function applyReadingStyle(config: ReadingStyleConfig): void {
  *
  * @param id - heading 的 DOM id
  */
-function scrollToHeading(id: string): void {
+function scrollToHeading(id: string, notifyExtension = true): void {
   const target = document.getElementById(id);
   if (!target) {
     return;
@@ -160,6 +176,9 @@ function scrollToHeading(id: string): void {
 
   // 立即更新高亮 ID，防止 Observer 重复触发
   activeHeadingId = id;
+  if (notifyExtension) {
+    postMessage({ type: "headingChanged", data: { id } });
+  }
 
   // 抑制滚动过程中的 headingChanged 消息
   suppressHeadingChange = true;
@@ -179,14 +198,75 @@ function scrollToHeading(id: string): void {
   }, 2000);
 }
 
+/** 绑定 Markdown 链接点击行为。 */
+function initLinkNavigation(): void {
+  const container = document.querySelector<HTMLElement>("#reader-content");
+  if (!container) {
+    return;
+  }
+
+  container.addEventListener("click", (event: MouseEvent): void => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const link = target.closest<HTMLAnchorElement>("a[href]");
+    if (!link) {
+      return;
+    }
+
+    const href = link.getAttribute("href");
+    if (!href) {
+      return;
+    }
+
+    if (href.startsWith("#")) {
+      event.preventDefault();
+      const id = decodeUriComponentSafely(href.slice(1));
+      if (document.getElementById(id)) {
+        scrollToHeading(id);
+      }
+      return;
+    }
+
+    event.preventDefault();
+    postMessage({ type: "openLink", data: { href } });
+  });
+}
+
+/** 解码标题链接片段，非法编码时保留原始文本。 */
+function decodeUriComponentSafely(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 /** 复制图标 SVG */
-const COPY_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>';
+const COPY_ICON =
+  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>';
 
 /** 成功图标 SVG */
-const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
+const CHECK_ICON =
+  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
 
 /** 全屏图标 SVG */
-const FULLSCREEN_ICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';
+const FULLSCREEN_ICON =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';
+
+/** 安全插入内置 SVG 图标，避免通过 innerHTML 写入 DOM。 */
+function setSvgContent(element: HTMLElement, markup: string): void {
+  const parsed = new DOMParser().parseFromString(
+    markup,
+    "image/svg+xml",
+  ).documentElement;
+  if (parsed.tagName.toLowerCase() !== "svg") {
+    return;
+  }
+  element.replaceChildren(document.importNode(parsed, true));
+}
 
 /** 为所有代码块添加复制和全屏按钮 */
 function initCodeBlockCopy(): void {
@@ -204,16 +284,16 @@ function initCodeBlockCopy(): void {
     const copyBtn = document.createElement("button");
     copyBtn.className = "code-copy-btn";
     copyBtn.title = "复制代码";
-    copyBtn.innerHTML = COPY_ICON;
+    setSvgContent(copyBtn, COPY_ICON);
 
     copyBtn.addEventListener("click", (): void => {
       const code = pre.querySelector("code");
       const text = code?.textContent ?? pre.textContent ?? "";
       void navigator.clipboard.writeText(text).then((): void => {
-        copyBtn.innerHTML = CHECK_ICON;
+        setSvgContent(copyBtn, CHECK_ICON);
         copyBtn.classList.add("copied");
         setTimeout((): void => {
-          copyBtn.innerHTML = COPY_ICON;
+          setSvgContent(copyBtn, COPY_ICON);
           copyBtn.classList.remove("copied");
         }, 1500);
       });
@@ -224,7 +304,7 @@ function initCodeBlockCopy(): void {
     const fullscreenBtn = document.createElement("button");
     fullscreenBtn.className = "code-copy-btn";
     fullscreenBtn.title = "全屏查看";
-    fullscreenBtn.innerHTML = FULLSCREEN_ICON;
+    setSvgContent(fullscreenBtn, FULLSCREEN_ICON);
     fullscreenBtn.style.right = "36px";
 
     fullscreenBtn.addEventListener("click", (): void => {
@@ -246,7 +326,7 @@ function showCodeFullscreen(pre: HTMLElement): void {
   }
 
   const clone = pre.cloneNode(true) as HTMLElement;
-  content.innerHTML = "";
+  content.replaceChildren();
   content.appendChild(clone);
   overlay.classList.add("active");
 }
@@ -259,7 +339,7 @@ function closeCodeFullscreen(): void {
     overlay.classList.remove("active");
   }
   if (content) {
-    content.innerHTML = "";
+    content.replaceChildren();
   }
 }
 
