@@ -157,6 +157,9 @@ export function getReaderHtml(
   themeName?: ThemeName,
 ): string {
   const nonce = getNonce();
+  const katexStyleUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "dist", "katex", "katex.min.css"),
+  );
   const scriptUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "dist", "reader.js"),
   );
@@ -166,8 +169,9 @@ export function getReaderHtml(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https: http: ${webview.cspSource};" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}'; img-src data: https: http: ${webview.cspSource}; font-src ${webview.cspSource} data:;" />
   <title>Hummingbird MD</title>
+  <link rel="stylesheet" href="${katexStyleUri}" />
   <style>
     ${getReaderStyles()}
   </style>
@@ -435,6 +439,10 @@ function getReaderStyles(): string {
     /* Flexoki 主题 */
     [data-theme-name="flexoki"] { --bg-primary: #fffcf0; --bg-secondary: #f2f0e5; --text-primary: #100f0f; --text-secondary: #6e6a5f; --border-color: #e8e5d9; --accent-color: #205ea6; --code-bg: #f2f0e5; --code-text: #af3029; --blockquote-border: #205ea6; --table-stripe: #f2f0e5; --shadow: rgba(16,15,15,0.08); --overlay-bg: #fffcf0; --overlay-toolbar-bg: rgba(255,252,240,0.95); --overlay-btn-border: rgba(16,15,15,0.12); --overlay-btn-text: #100f0f; --overlay-btn-hover: rgba(16,15,15,0.06); }
     [data-theme-name="flexoki"][data-theme="dark"] { --bg-primary: #100f0f; --bg-secondary: #1c1b1a; --text-primary: #cecdc3; --text-secondary: #878580; --border-color: #282726; --accent-color: #5e9af0; --code-bg: #1c1b1a; --code-text: #d14d41; --blockquote-border: #5e9af0; --table-stripe: #1c1b1a; --shadow: rgba(0,0,0,0.3); --overlay-bg: #000000; --overlay-toolbar-bg: rgba(0,0,0,0.7); --overlay-btn-border: rgba(206,205,195,0.15); --overlay-btn-text: #cecdc3; --overlay-btn-hover: rgba(206,205,195,0.1); }
+
+    /* KaTeX 公式 */
+    .katex { color: var(--text-primary); }
+    .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }
 
     /* 主题切换过渡 */
     html { transition: background-color 0.3s, color 0.3s; }

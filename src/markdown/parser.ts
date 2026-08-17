@@ -1,4 +1,6 @@
 import MarkdownIt from "markdown-it";
+import markdownItKatex from "@vscode/markdown-it-katex";
+import katex from "katex";
 import type { Heading, ParsedDocument } from "../types/index.js";
 import {
   bundledLanguages,
@@ -35,7 +37,135 @@ const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
+}).use(markdownItKatex, {
+  enableBareBlocks: true,
+  enableFencedBlocks: true,
+  throwOnError: false,
 });
+
+/** 查找未被反斜杠转义的数学结束标记。 */
+function findUnescapedDelimiter(
+  source: string,
+  delimiter: string,
+  start: number,
+): number {
+  let index = start;
+  while ((index = source.indexOf(delimiter, index)) >= 0) {
+    let slashCount = 0;
+    for (
+      let cursor = index - 1;
+      cursor >= 0 && source[cursor] === "\\";
+      cursor--
+    ) {
+      slashCount++;
+    }
+    if (slashCount % 2 === 0) {
+      return index;
+    }
+    index += delimiter.length;
+  }
+  return -1;
+}
+
+/** 转义公式错误提示中的 HTML 特殊字符。 */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** 渲染方括号形式的 TeX 公式。 */
+function renderBracketMath(source: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(source.trim(), {
+      displayMode,
+      throwOnError: false,
+    });
+  } catch {
+    const escaped = escapeHtml(source);
+    return `<span class="katex-error" title="${escaped}">${escaped}</span>`;
+  }
+}
+
+// 支持 LaTeX 常见的 \\(inline\\) 和 \\[block\\] 分隔符。
+md.inline.ruler.before(
+  "escape",
+  "math_bracket_inline",
+  (state, silent): boolean => {
+    if (state.src.slice(state.pos, state.pos + 2) !== "\\(") {
+      return false;
+    }
+
+    const contentStart = state.pos + 2;
+    const closingIndex = findUnescapedDelimiter(state.src, "\\)", contentStart);
+    if (closingIndex < 0) {
+      return false;
+    }
+
+    if (!silent) {
+      const token = state.push("math_bracket_inline", "math", 0);
+      token.markup = "\\(\\)";
+      token.content = state.src.slice(contentStart, closingIndex);
+    }
+    state.pos = closingIndex + 2;
+    return true;
+  },
+);
+
+md.block.ruler.after(
+  "math_block",
+  "math_bracket_block",
+  (state, startLine, endLine, silent): boolean => {
+    const openingStart = state.bMarks[startLine] + state.tShift[startLine];
+    const lineEnd = state.eMarks[startLine];
+    const firstLine = state.src.slice(openingStart, lineEnd).trimStart();
+    if (!firstLine.startsWith("\\[")) {
+      return false;
+    }
+
+    const contentStart =
+      openingStart + state.src.slice(openingStart, lineEnd).indexOf("\\[") + 2;
+    const closingIndex = findUnescapedDelimiter(state.src, "\\]", contentStart);
+    if (closingIndex < 0) {
+      return false;
+    }
+
+    const closingLine =
+      startLine +
+      state.src.slice(state.bMarks[startLine], closingIndex).split("\n").length -
+      1;
+    if (closingLine >= endLine) {
+      return false;
+    }
+
+    const trailingText = state.src
+      .slice(closingIndex + 2, state.eMarks[closingLine])
+      .trim();
+    if (trailingText.length > 0) {
+      return false;
+    }
+
+    if (!silent) {
+      const token = state.push("math_bracket_block", "math", 0);
+      token.block = true;
+      token.markup = "\\[\\]";
+      token.content = state.src.slice(contentStart, closingIndex);
+      token.map = [startLine, closingLine + 1];
+    }
+    state.line = closingLine + 1;
+    return true;
+  },
+);
+
+md.renderer.rules.math_bracket_inline = (tokens, idx): string => {
+  return renderBracketMath(tokens[idx].content, false);
+};
+md.renderer.rules.math_bracket_block = (tokens, idx): string => {
+  return `<p class="katex-block">${renderBracketMath(tokens[idx].content, true)}</p>\n`;
+};
 
 // 保存原始 fence 渲染器，用于 Shiki 未初始化或语言不支持时回退
 const defaultFenceRenderer = md.renderer.rules.fence;
@@ -147,7 +277,11 @@ function extractAndApplyHeadingIds(tokens: MdToken[]): Heading[] {
 function collectFenceLanguages(tokens: MdToken[]): string[] {
   const langs: string[] = [];
   for (const token of tokens) {
-    if (token.type === "fence" && token.info.trim() !== "mermaid") {
+    if (
+      token.type === "fence" &&
+      token.info.trim() !== "mermaid" &&
+      token.info.trim().toLowerCase() !== "math"
+    ) {
       const lang = token.info.trim();
       if (lang) langs.push(lang);
     }

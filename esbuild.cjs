@@ -1,6 +1,24 @@
+const fs = require("node:fs");
+const path = require("node:path");
 const esbuild = require("esbuild");
 
 const isProduction = process.argv.includes("--production");
+
+/** 复制 KaTeX 样式和字体，保证 VS Code Webview 离线可用。 */
+function copyKatexAssets() {
+  const sourceRoot = path.join("node_modules", "katex", "dist");
+  const targetRoot = path.join("dist", "katex");
+  fs.mkdirSync(targetRoot, { recursive: true });
+  fs.copyFileSync(
+    path.join(sourceRoot, "katex.min.css"),
+    path.join(targetRoot, "katex.min.css"),
+  );
+  fs.cpSync(
+    path.join(sourceRoot, "fonts"),
+    path.join(targetRoot, "fonts"),
+    { recursive: true },
+  );
+}
 
 const sharedConfig = {
   bundle: true,
@@ -9,6 +27,8 @@ const sharedConfig = {
 };
 
 async function build() {
+  copyKatexAssets();
+
   // 插件主进程
   const extensionCtx = await esbuild.context({
     ...sharedConfig,
