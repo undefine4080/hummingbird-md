@@ -299,13 +299,7 @@ function collectCodePathCandidates(
 const codePathHrefByToken = new WeakMap<MdToken, string>();
 
 // 命中文件引用的代码 span 渲染为链接，未命中保持纯代码样式。
-md.renderer.rules.code_inline = (
-  tokens,
-  idx,
-  options,
-  env,
-  self,
-): string => {
+md.renderer.rules.code_inline = (tokens, idx, options, env, self): string => {
   const token = tokens[idx];
   const codeHtml = defaultCodeInlineRenderer
     ? defaultCodeInlineRenderer(tokens, idx, options, env, self)
