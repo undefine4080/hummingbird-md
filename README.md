@@ -7,8 +7,8 @@
 [![VS Code Version](https://img.shields.io/badge/VS%20Code-1.85%2B-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-![文档预览](/media/preview-main.png)
-![设置面板](/media/preview-setting.png)
+![文档预览](./media/preview-main.png)
+![设置面板](./media/preview-setting.png)
 
 </div>
 

@@ -69,9 +69,10 @@ export function resolveLinkTarget(
   const decodedFragment = decodeUriComponentSafely(parsed.fragment);
   const location = parseLinkLocation(decodedFragment);
   const fragment = location ? undefined : decodedFragment || undefined;
-  const filePath = parsed.scheme === "vscode" && parsed.authority === "file"
-    ? parsed.path
-    : parsed.fsPath;
+  const filePath =
+    parsed.scheme === "vscode" && parsed.authority === "file"
+      ? parsed.path
+      : parsed.fsPath;
   const uri = vscode.Uri.file(filePath);
 
   return { kind: "file", uri, fragment, location };

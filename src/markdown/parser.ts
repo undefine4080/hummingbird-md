@@ -135,7 +135,8 @@ md.block.ruler.after(
 
     const closingLine =
       startLine +
-      state.src.slice(state.bMarks[startLine], closingIndex).split("\n").length -
+      state.src.slice(state.bMarks[startLine], closingIndex).split("\n")
+        .length -
       1;
     if (closingLine >= endLine) {
       return false;

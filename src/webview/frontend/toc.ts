@@ -99,7 +99,9 @@ function setActiveItem(id: string): void {
   }
 
   // 添加新的高亮
-  const target = document.querySelector<HTMLElement>(`.toc-item[data-id="${id}"]`);
+  const target = document.querySelector<HTMLElement>(
+    `.toc-item[data-id="${id}"]`,
+  );
   if (target) {
     target.classList.add("active");
     // 如果目标不在可视区域，滚动到可视区域
@@ -107,7 +109,6 @@ function setActiveItem(id: string): void {
       target.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }
-
 }
 
 /** 检查元素是否在可视区域内 */
@@ -116,7 +117,8 @@ function isElementInViewport(el: HTMLElement): boolean {
   return (
     rect.top >= 0 &&
     rect.left >= 0 &&
-    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) &&
     rect.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
 }
@@ -157,7 +159,8 @@ export function initToc(): void {
     return;
   }
 
-  const data = (window as unknown as { __INITIAL_DATA__: TocInitialData }).__INITIAL_DATA__;
+  const data = (window as unknown as { __INITIAL_DATA__: TocInitialData })
+    .__INITIAL_DATA__;
   if (!data) {
     return;
   }
@@ -262,7 +265,9 @@ const DEFAULT_STYLE: ReadingStyleConfig = {
 function isFontAvailable(fontName: string): boolean {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  if (!context) { return false; }
+  if (!context) {
+    return false;
+  }
 
   const text = "mmmmmmmmmmlli1IWwO0@#&%测试字体";
   const baselines = ["serif", "sans-serif", "monospace"];
@@ -272,7 +277,9 @@ function isFontAvailable(fontName: string): boolean {
     const baseWidth = context.measureText(text).width;
     context.font = `72px '${fontName}', ${baseline}`;
     const testWidth = context.measureText(text).width;
-    if (testWidth !== baseWidth) { return true; }
+    if (testWidth !== baseWidth) {
+      return true;
+    }
   }
   return false;
 }
@@ -287,7 +294,9 @@ function renderFontSelect(
   // 用 Canvas 验证每个字体是否可用，过滤不可用的
   const verifiedGroups: Array<{ label: string; fonts: FontOption[] }> = [];
   for (const group of fontGroups) {
-    const available = group.fonts.filter((f): boolean => isFontAvailable(f.detectName));
+    const available = group.fonts.filter((f): boolean =>
+      isFontAvailable(f.detectName),
+    );
     if (available.length > 0) {
       verifiedGroups.push({ label: group.label, fonts: available });
     }
@@ -313,7 +322,9 @@ function renderFontSelect(
     optgroup.label = label;
     for (const font of fonts) {
       // 去重（同一 value 可能出现在不同平台分组中）
-      if (allValues.has(font.value)) { continue; }
+      if (allValues.has(font.value)) {
+        continue;
+      }
       allValues.add(font.value);
       const option = document.createElement("option");
       option.value = font.value;
@@ -347,8 +358,13 @@ function renderFontSelect(
 }
 
 /** 初始化阅读样式控件 */
-function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: FontGroup[]): void {
-  const mermaidPreset = document.getElementById("mermaid-theme-preset") as HTMLSelectElement | null;
+function initStyleControls(
+  savedStyle: ReadingStyleConfig | null,
+  fontGroups: FontGroup[],
+): void {
+  const mermaidPreset = document.getElementById(
+    "mermaid-theme-preset",
+  ) as HTMLSelectElement | null;
   mermaidPreset?.addEventListener("change", (): void => {
     postMessage({
       type: "mermaidThemeChanged",
@@ -358,31 +374,66 @@ function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: Fo
 
   const style = savedStyle ?? DEFAULT_STYLE;
 
-  const fontSize = document.getElementById("style-font-size") as HTMLInputElement | null;
+  const fontSize = document.getElementById(
+    "style-font-size",
+  ) as HTMLInputElement | null;
   const fontSizeVal = document.getElementById("style-font-size-val");
-  const fontFamily = document.getElementById("style-font-family") as HTMLSelectElement | null;
-  const fontFamilyCustom = document.getElementById("style-font-family-custom") as HTMLInputElement | null;
-  const fontWeight = document.getElementById("style-font-weight") as HTMLInputElement | null;
+  const fontFamily = document.getElementById(
+    "style-font-family",
+  ) as HTMLSelectElement | null;
+  const fontFamilyCustom = document.getElementById(
+    "style-font-family-custom",
+  ) as HTMLInputElement | null;
+  const fontWeight = document.getElementById(
+    "style-font-weight",
+  ) as HTMLInputElement | null;
   const fontWeightVal = document.getElementById("style-font-weight-val");
-  const lineHeight = document.getElementById("style-line-height") as HTMLInputElement | null;
+  const lineHeight = document.getElementById(
+    "style-line-height",
+  ) as HTMLInputElement | null;
   const lineHeightVal = document.getElementById("style-line-height-val");
-  const paragraphSpacing = document.getElementById("style-paragraph-spacing") as HTMLInputElement | null;
-  const paragraphSpacingVal = document.getElementById("style-paragraph-spacing-val");
+  const paragraphSpacing = document.getElementById(
+    "style-paragraph-spacing",
+  ) as HTMLInputElement | null;
+  const paragraphSpacingVal = document.getElementById(
+    "style-paragraph-spacing-val",
+  );
 
   // 动态渲染字体选择器
   if (fontFamily) {
-    renderFontSelect(fontFamily, fontGroups, style.fontFamily, fontFamilyCustom);
+    renderFontSelect(
+      fontFamily,
+      fontGroups,
+      style.fontFamily,
+      fontFamilyCustom,
+    );
   }
 
   // 设置初始值
-  if (fontSize) { fontSize.value = String(style.fontSize); }
-  if (fontSizeVal) { fontSizeVal.textContent = String(style.fontSize); }
-  if (fontWeight) { fontWeight.value = String(style.fontWeight); }
-  if (fontWeightVal) { fontWeightVal.textContent = String(style.fontWeight); }
-  if (lineHeight) { lineHeight.value = String(style.lineHeight); }
-  if (lineHeightVal) { lineHeightVal.textContent = String(style.lineHeight); }
-  if (paragraphSpacing) { paragraphSpacing.value = String(style.paragraphSpacing); }
-  if (paragraphSpacingVal) { paragraphSpacingVal.textContent = String(style.paragraphSpacing); }
+  if (fontSize) {
+    fontSize.value = String(style.fontSize);
+  }
+  if (fontSizeVal) {
+    fontSizeVal.textContent = String(style.fontSize);
+  }
+  if (fontWeight) {
+    fontWeight.value = String(style.fontWeight);
+  }
+  if (fontWeightVal) {
+    fontWeightVal.textContent = String(style.fontWeight);
+  }
+  if (lineHeight) {
+    lineHeight.value = String(style.lineHeight);
+  }
+  if (lineHeightVal) {
+    lineHeightVal.textContent = String(style.lineHeight);
+  }
+  if (paragraphSpacing) {
+    paragraphSpacing.value = String(style.paragraphSpacing);
+  }
+  if (paragraphSpacingVal) {
+    paragraphSpacingVal.textContent = String(style.paragraphSpacing);
+  }
 
   /** 获取当前生效的字体值 */
   const getCurrentFontFamily = (): string => {
@@ -401,14 +452,18 @@ function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: Fo
         fontSize: Number(fontSize?.value ?? DEFAULT_STYLE.fontSize),
         fontWeight: Number(fontWeight?.value ?? DEFAULT_STYLE.fontWeight),
         lineHeight: Number(lineHeight?.value ?? DEFAULT_STYLE.lineHeight),
-        paragraphSpacing: Number(paragraphSpacing?.value ?? DEFAULT_STYLE.paragraphSpacing),
+        paragraphSpacing: Number(
+          paragraphSpacing?.value ?? DEFAULT_STYLE.paragraphSpacing,
+        ),
       },
     });
   };
 
   // 绑定滑块事件
   fontSize?.addEventListener("input", (): void => {
-    if (fontSizeVal) { fontSizeVal.textContent = fontSize.value; }
+    if (fontSizeVal) {
+      fontSizeVal.textContent = fontSize.value;
+    }
     emitStyleChange();
   });
   fontFamily?.addEventListener("change", (): void => {
@@ -418,7 +473,9 @@ function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: Fo
         fontFamilyCustom.focus();
       }
     } else {
-      if (fontFamilyCustom) { fontFamilyCustom.style.display = "none"; }
+      if (fontFamilyCustom) {
+        fontFamilyCustom.style.display = "none";
+      }
       emitStyleChange();
     }
   });
@@ -426,15 +483,21 @@ function initStyleControls(savedStyle: ReadingStyleConfig | null, fontGroups: Fo
     emitStyleChange();
   });
   fontWeight?.addEventListener("input", (): void => {
-    if (fontWeightVal) { fontWeightVal.textContent = fontWeight.value; }
+    if (fontWeightVal) {
+      fontWeightVal.textContent = fontWeight.value;
+    }
     emitStyleChange();
   });
   lineHeight?.addEventListener("input", (): void => {
-    if (lineHeightVal) { lineHeightVal.textContent = lineHeight.value; }
+    if (lineHeightVal) {
+      lineHeightVal.textContent = lineHeight.value;
+    }
     emitStyleChange();
   });
   paragraphSpacing?.addEventListener("input", (): void => {
-    if (paragraphSpacingVal) { paragraphSpacingVal.textContent = paragraphSpacing.value; }
+    if (paragraphSpacingVal) {
+      paragraphSpacingVal.textContent = paragraphSpacing.value;
+    }
     emitStyleChange();
   });
 }
@@ -457,7 +520,12 @@ function initDocStatsPanel(stats: DocumentStats): void {
   });
 
   // 渲染统计项
-  const items: Array<{ label: string; value: string; full?: boolean; copyable?: boolean }> = [
+  const items: Array<{
+    label: string;
+    value: string;
+    full?: boolean;
+    copyable?: boolean;
+  }> = [
     { label: "字数", value: String(stats.wordCount) },
     { label: "字符数", value: String(stats.charCount) },
     { label: "段落数", value: String(stats.paragraphCount) },

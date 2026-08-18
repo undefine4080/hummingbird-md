@@ -55,9 +55,8 @@ export class TocSidebar implements vscode.WebviewViewProvider {
   private onThemeNameChanged: ((name: ThemeName) => void) | null = null;
 
   /** Mermaid 主题预设变更回调 */
-  private onMermaidThemeChanged:
-    | ((preset: MermaidThemePreset) => void)
-    | null = null;
+  private onMermaidThemeChanged: ((preset: MermaidThemePreset) => void) | null =
+    null;
 
   /** 消息监听器 */
   private messageListener: vscode.Disposable | null = null;

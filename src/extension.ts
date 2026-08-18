@@ -39,12 +39,15 @@ const activePanels = new Map<string, ReaderPanel>();
 let tocSidebar: TocSidebar;
 
 /** 插件激活入口 */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(
+  context: vscode.ExtensionContext,
+): Promise<void> {
   // 初始化 Shiki 语法高亮引擎
   await initHighlighter();
 
   // 加载保存的阅读样式配置
-  const savedStyle = context.globalState.get<ReadingStyleConfig>(STYLE_CONFIG_KEY);
+  const savedStyle =
+    context.globalState.get<ReadingStyleConfig>(STYLE_CONFIG_KEY);
   if (savedStyle) {
     currentStyle = savedStyle;
   }
@@ -56,7 +59,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   // 加载保存的 Mermaid 主题预设
-  const savedMermaidThemePreset = context.globalState.get<MermaidThemePreset>(MERMAID_THEME_KEY);
+  const savedMermaidThemePreset =
+    context.globalState.get<MermaidThemePreset>(MERMAID_THEME_KEY);
   if (savedMermaidThemePreset) {
     currentMermaidThemePreset = savedMermaidThemePreset;
   }
@@ -72,12 +76,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     console.log("[HummingbirdMD] onHeadingClicked 回调触发，id:", id);
     // 找到最近活跃的阅读器面板并高亮标题
     const activeEditor = vscode.window.activeTextEditor;
-    console.log("[HummingbirdMD] activeTextEditor:", activeEditor ? activeEditor.document.uri.path : "null");
-    console.log("[HummingbirdMD] activePanels keys:", Array.from(activePanels.keys()));
+    console.log(
+      "[HummingbirdMD] activeTextEditor:",
+      activeEditor ? activeEditor.document.uri.path : "null",
+    );
+    console.log(
+      "[HummingbirdMD] activePanels keys:",
+      Array.from(activePanels.keys()),
+    );
     if (activeEditor) {
       const panel = activePanels.get(activeEditor.document.uri.path);
       if (panel) {
-        console.log("[HummingbirdMD] 通过 activeEditor 找到面板，调用 highlightHeading");
+        console.log(
+          "[HummingbirdMD] 通过 activeEditor 找到面板，调用 highlightHeading",
+        );
         panel.highlightHeading(id);
         return;
       }
@@ -178,7 +190,10 @@ async function openReader(
   });
 
   panel.setOnHeadingsLoaded((headings, theme, stats): void => {
-    console.log("[HummingbirdMD] onHeadingsLoaded 回调触发，标题数:", headings.length);
+    console.log(
+      "[HummingbirdMD] onHeadingsLoaded 回调触发，标题数:",
+      headings.length,
+    );
     tocSidebar.updateHeadings(headings, theme, stats);
   });
 

@@ -33,110 +33,270 @@ const FONT_DATABASE: FontGroup[] = [
   {
     label: "系统 / 无衬线",
     fonts: [
-      { value: "-apple-system, 'Segoe UI', sans-serif", label: "系统默认", detectName: "-apple-system" },
-      { value: "system-ui, sans-serif", label: "system-ui", detectName: "system-ui" },
-      { value: "Arial, Helvetica, sans-serif", label: "Arial", detectName: "Arial" },
-      { value: "Tahoma, Geneva, sans-serif", label: "Tahoma", detectName: "Tahoma" },
-      { value: "Verdana, Geneva, sans-serif", label: "Verdana", detectName: "Verdana" },
+      {
+        value: "-apple-system, 'Segoe UI', sans-serif",
+        label: "系统默认",
+        detectName: "-apple-system",
+      },
+      {
+        value: "system-ui, sans-serif",
+        label: "system-ui",
+        detectName: "system-ui",
+      },
+      {
+        value: "Arial, Helvetica, sans-serif",
+        label: "Arial",
+        detectName: "Arial",
+      },
+      {
+        value: "Tahoma, Geneva, sans-serif",
+        label: "Tahoma",
+        detectName: "Tahoma",
+      },
+      {
+        value: "Verdana, Geneva, sans-serif",
+        label: "Verdana",
+        detectName: "Verdana",
+      },
     ],
   },
   {
     label: "系统 / 无衬线",
     platform: "darwin",
     fonts: [
-      { value: "'Helvetica Neue', Helvetica, sans-serif", label: "Helvetica Neue", detectName: "Helvetica Neue" },
-      { value: "'Trebuchet MS', sans-serif", label: "Trebuchet MS", detectName: "Trebuchet MS" },
+      {
+        value: "'Helvetica Neue', Helvetica, sans-serif",
+        label: "Helvetica Neue",
+        detectName: "Helvetica Neue",
+      },
+      {
+        value: "'Trebuchet MS', sans-serif",
+        label: "Trebuchet MS",
+        detectName: "Trebuchet MS",
+      },
     ],
   },
   {
     label: "系统 / 无衬线",
     platform: "win32",
     fonts: [
-      { value: "'Segoe UI', Tahoma, sans-serif", label: "Segoe UI", detectName: "Segoe UI" },
-      { value: "Calibri, 'Segoe UI', sans-serif", label: "Calibri", detectName: "Calibri" },
-      { value: "Bahnschrift, 'Segoe UI', sans-serif", label: "Bahnschrift", detectName: "Bahnschrift" },
-      { value: "Tahoma, Geneva, sans-serif", label: "Tahoma", detectName: "Tahoma" },
+      {
+        value: "'Segoe UI', Tahoma, sans-serif",
+        label: "Segoe UI",
+        detectName: "Segoe UI",
+      },
+      {
+        value: "Calibri, 'Segoe UI', sans-serif",
+        label: "Calibri",
+        detectName: "Calibri",
+      },
+      {
+        value: "Bahnschrift, 'Segoe UI', sans-serif",
+        label: "Bahnschrift",
+        detectName: "Bahnschrift",
+      },
+      {
+        value: "Tahoma, Geneva, sans-serif",
+        label: "Tahoma",
+        detectName: "Tahoma",
+      },
     ],
   },
   {
     label: "中文字体",
     platform: "darwin",
     fonts: [
-      { value: "'PingFang SC', 'Microsoft YaHei', sans-serif", label: "苹方", detectName: "PingFang SC" },
-      { value: "'Heiti SC', 'SimHei', sans-serif", label: "黑体", detectName: "Heiti SC" },
-      { value: "'Songti SC', 'SimSun', serif", label: "宋体", detectName: "Songti SC" },
-      { value: "'STKaiti', 'KaiTi', serif", label: "楷体", detectName: "STKaiti" },
-      { value: "'STFangsong', 'FangSong', serif", label: "仿宋", detectName: "STFangsong" },
+      {
+        value: "'PingFang SC', 'Microsoft YaHei', sans-serif",
+        label: "苹方",
+        detectName: "PingFang SC",
+      },
+      {
+        value: "'Heiti SC', 'SimHei', sans-serif",
+        label: "黑体",
+        detectName: "Heiti SC",
+      },
+      {
+        value: "'Songti SC', 'SimSun', serif",
+        label: "宋体",
+        detectName: "Songti SC",
+      },
+      {
+        value: "'STKaiti', 'KaiTi', serif",
+        label: "楷体",
+        detectName: "STKaiti",
+      },
+      {
+        value: "'STFangsong', 'FangSong', serif",
+        label: "仿宋",
+        detectName: "STFangsong",
+      },
     ],
   },
   {
     label: "中文字体",
     platform: "win32",
     fonts: [
-      { value: "'Microsoft YaHei', 'PingFang SC', sans-serif", label: "微软雅黑", detectName: "Microsoft YaHei" },
-      { value: "DengXian, 'PingFang SC', sans-serif", label: "等线体", detectName: "DengXian" },
-      { value: "SimHei, 'Heiti SC', sans-serif", label: "黑体", detectName: "SimHei" },
-      { value: "SimSun, 'Songti SC', serif", label: "宋体", detectName: "SimSun" },
+      {
+        value: "'Microsoft YaHei', 'PingFang SC', sans-serif",
+        label: "微软雅黑",
+        detectName: "Microsoft YaHei",
+      },
+      {
+        value: "DengXian, 'PingFang SC', sans-serif",
+        label: "等线体",
+        detectName: "DengXian",
+      },
+      {
+        value: "SimHei, 'Heiti SC', sans-serif",
+        label: "黑体",
+        detectName: "SimHei",
+      },
+      {
+        value: "SimSun, 'Songti SC', serif",
+        label: "宋体",
+        detectName: "SimSun",
+      },
       { value: "KaiTi, 'STKaiti', serif", label: "楷体", detectName: "KaiTi" },
-      { value: "FangSong, 'STFangsong', serif", label: "仿宋", detectName: "FangSong" },
+      {
+        value: "FangSong, 'STFangsong', serif",
+        label: "仿宋",
+        detectName: "FangSong",
+      },
     ],
   },
   {
     label: "中文字体",
     fonts: [
-      { value: "'Noto Sans SC', 'Source Han Sans SC', sans-serif", label: "思源黑体", detectName: "Noto Sans SC" },
-      { value: "'Noto Serif SC', 'Source Han Serif SC', serif", label: "思源宋体", detectName: "Noto Serif SC" },
+      {
+        value: "'Noto Sans SC', 'Source Han Sans SC', sans-serif",
+        label: "思源黑体",
+        detectName: "Noto Sans SC",
+      },
+      {
+        value: "'Noto Serif SC', 'Source Han Serif SC', serif",
+        label: "思源宋体",
+        detectName: "Noto Serif SC",
+      },
     ],
   },
   {
     label: "衬线",
     fonts: [
-      { value: "Georgia, 'Times New Roman', serif", label: "Georgia", detectName: "Georgia" },
-      { value: "'Times New Roman', Times, serif", label: "Times New Roman", detectName: "Times New Roman" },
+      {
+        value: "Georgia, 'Times New Roman', serif",
+        label: "Georgia",
+        detectName: "Georgia",
+      },
+      {
+        value: "'Times New Roman', Times, serif",
+        label: "Times New Roman",
+        detectName: "Times New Roman",
+      },
     ],
   },
   {
     label: "衬线",
     platform: "darwin",
     fonts: [
-      { value: "'Palatino Linotype', Palatino, serif", label: "Palatino", detectName: "Palatino Linotype" },
+      {
+        value: "'Palatino Linotype', Palatino, serif",
+        label: "Palatino",
+        detectName: "Palatino Linotype",
+      },
     ],
   },
   {
     label: "衬线",
     platform: "win32",
     fonts: [
-      { value: "Cambria, Georgia, serif", label: "Cambria", detectName: "Cambria" },
-      { value: "'Palatino Linotype', Palatino, serif", label: "Palatino", detectName: "Palatino Linotype" },
-      { value: "Georgia, 'Times New Roman', serif", label: "Georgia", detectName: "Georgia" },
+      {
+        value: "Cambria, Georgia, serif",
+        label: "Cambria",
+        detectName: "Cambria",
+      },
+      {
+        value: "'Palatino Linotype', Palatino, serif",
+        label: "Palatino",
+        detectName: "Palatino Linotype",
+      },
+      {
+        value: "Georgia, 'Times New Roman', serif",
+        label: "Georgia",
+        detectName: "Georgia",
+      },
     ],
   },
   {
     label: "等宽",
     platform: "darwin",
     fonts: [
-      { value: "'SF Mono', Menlo, Consolas, monospace", label: "SF Mono", detectName: "SF Mono" },
-      { value: "Menlo, Consolas, monospace", label: "Menlo", detectName: "Menlo" },
-      { value: "Monaco, Menlo, monospace", label: "Monaco", detectName: "Monaco" },
+      {
+        value: "'SF Mono', Menlo, Consolas, monospace",
+        label: "SF Mono",
+        detectName: "SF Mono",
+      },
+      {
+        value: "Menlo, Consolas, monospace",
+        label: "Menlo",
+        detectName: "Menlo",
+      },
+      {
+        value: "Monaco, Menlo, monospace",
+        label: "Monaco",
+        detectName: "Monaco",
+      },
     ],
   },
   {
     label: "等宽",
     platform: "win32",
     fonts: [
-      { value: "Consolas, 'Courier New', monospace", label: "Consolas", detectName: "Consolas" },
-      { value: "'Cascadia Code', Consolas, monospace", label: "Cascadia Code", detectName: "Cascadia Code" },
-      { value: "'Cascadia Mono', Consolas, monospace", label: "Cascadia Mono", detectName: "Cascadia Mono" },
-      { value: "'Lucida Console', Monaco, monospace", label: "Lucida Console", detectName: "Lucida Console" },
+      {
+        value: "Consolas, 'Courier New', monospace",
+        label: "Consolas",
+        detectName: "Consolas",
+      },
+      {
+        value: "'Cascadia Code', Consolas, monospace",
+        label: "Cascadia Code",
+        detectName: "Cascadia Code",
+      },
+      {
+        value: "'Cascadia Mono', Consolas, monospace",
+        label: "Cascadia Mono",
+        detectName: "Cascadia Mono",
+      },
+      {
+        value: "'Lucida Console', Monaco, monospace",
+        label: "Lucida Console",
+        detectName: "Lucida Console",
+      },
     ],
   },
   {
     label: "等宽",
     fonts: [
-      { value: "'Fira Code', 'Courier New', monospace", label: "Fira Code", detectName: "Fira Code" },
-      { value: "'JetBrains Mono', Consolas, monospace", label: "JetBrains Mono", detectName: "JetBrains Mono" },
-      { value: "'Source Code Pro', Consolas, monospace", label: "Source Code Pro", detectName: "Source Code Pro" },
-      { value: "'IBM Plex Mono', Consolas, monospace", label: "IBM Plex Mono", detectName: "IBM Plex Mono" },
+      {
+        value: "'Fira Code', 'Courier New', monospace",
+        label: "Fira Code",
+        detectName: "Fira Code",
+      },
+      {
+        value: "'JetBrains Mono', Consolas, monospace",
+        label: "JetBrains Mono",
+        detectName: "JetBrains Mono",
+      },
+      {
+        value: "'Source Code Pro', Consolas, monospace",
+        label: "Source Code Pro",
+        detectName: "Source Code Pro",
+      },
+      {
+        value: "'IBM Plex Mono', Consolas, monospace",
+        label: "IBM Plex Mono",
+        detectName: "IBM Plex Mono",
+      },
     ],
   },
 ];
@@ -144,13 +304,15 @@ const FONT_DATABASE: FontGroup[] = [
 /** 根据当前平台过滤字体数据库，返回候选分组列表 */
 function getFontCandidatesForPlatform(): FontGroup[] {
   const platform = process.platform;
-  return FONT_DATABASE
-    .filter((group): boolean => {
-      if (!group.platform) { return true; }
-      const platforms = Array.isArray(group.platform) ? group.platform : [group.platform];
-      return platforms.includes(platform);
-    })
-    .map((group): FontGroup => ({ label: group.label, fonts: group.fonts }));
+  return FONT_DATABASE.filter((group): boolean => {
+    if (!group.platform) {
+      return true;
+    }
+    const platforms = Array.isArray(group.platform)
+      ? group.platform
+      : [group.platform];
+    return platforms.includes(platform);
+  }).map((group): FontGroup => ({ label: group.label, fonts: group.fonts }));
 }
 
 /** 生成阅读器面板的 HTML */
@@ -255,7 +417,8 @@ export function getTocHtml(
     vscode.Uri.joinPath(extensionUri, "dist", "toc.js"),
   );
 
-  const statsPanelHtml = stats ? /* html */ `
+  const statsPanelHtml = stats
+    ? /* html */ `
   <div class="doc-stats-panel" id="doc-stats-panel">
     <div class="doc-stats-header" id="doc-stats-toggle">
       <span class="doc-stats-header-text">文档信息</span>
@@ -264,7 +427,8 @@ export function getTocHtml(
     <div class="doc-stats-body" id="doc-stats-body">
       <div class="doc-stats-grid" id="doc-stats-grid"></div>
     </div>
-  </div>` : "";
+  </div>`
+    : "";
 
   const currentThemeName = themeName ?? "classic";
 
@@ -763,7 +927,8 @@ function getTocStyles(): string {
 
 /** 生成随机 nonce */
 function getNonce(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const segments: string[] = [];
   for (let i = 0; i < 32; i++) {
     segments.push(chars[Math.floor(Math.random() * chars.length)]);

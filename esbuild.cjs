@@ -13,11 +13,9 @@ function copyKatexAssets() {
     path.join(sourceRoot, "katex.min.css"),
     path.join(targetRoot, "katex.min.css"),
   );
-  fs.cpSync(
-    path.join(sourceRoot, "fonts"),
-    path.join(targetRoot, "fonts"),
-    { recursive: true },
-  );
+  fs.cpSync(path.join(sourceRoot, "fonts"), path.join(targetRoot, "fonts"), {
+    recursive: true,
+  });
 }
 
 const sharedConfig = {

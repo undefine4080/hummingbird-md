@@ -75,10 +75,18 @@ const diagramSvgs: string[] = [];
 const diagramSources: string[] = [];
 /** 全屏查看器状态实例 */
 const vs: ViewerState = {
-  scale: 1, translateX: 0, translateY: 0, rotation: 0,
-  isDragging: false, dragStartX: 0, dragStartY: 0,
-  dragStartTranslateX: 0, dragStartTranslateY: 0,
-  isPinching: false, pinchStartDistance: 0, pinchStartScale: 1,
+  scale: 1,
+  translateX: 0,
+  translateY: 0,
+  rotation: 0,
+  isDragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  dragStartTranslateX: 0,
+  dragStartTranslateY: 0,
+  isPinching: false,
+  pinchStartDistance: 0,
+  pinchStartScale: 1,
 };
 /** 应用当前主题和 Mermaid 预设。 */
 function applyMermaidConfig(): void {
@@ -141,7 +149,9 @@ function downloadSvgAsJpg(svgHtml: string, diagramIndex: number): void {
   // 序列化 SVG 并构造 data URL
   const serializer = new XMLSerializer();
   const svgString = serializer.serializeToString(svgEl);
-  const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const svgBlob = new Blob([svgString], {
+    type: "image/svg+xml;charset=utf-8",
+  });
   const url = URL.createObjectURL(svgBlob);
 
   // 通过 Image 加载 SVG 后绘制到 Canvas
@@ -165,21 +175,25 @@ function downloadSvgAsJpg(svgHtml: string, diagramIndex: number): void {
     ctx.drawImage(img, 0, 0);
 
     // 导出为 JPG 并触发下载
-    canvas.toBlob((blob: Blob | null): void => {
-      if (!blob) {
+    canvas.toBlob(
+      (blob: Blob | null): void => {
+        if (!blob) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        const jpgUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = jpgUrl;
+        link.download = `mermaid-diagram-${diagramIndex + 1}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(jpgUrl);
         URL.revokeObjectURL(url);
-        return;
-      }
-      const jpgUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = jpgUrl;
-      link.download = `mermaid-diagram-${diagramIndex + 1}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(jpgUrl);
-      URL.revokeObjectURL(url);
-    }, "image/jpeg", 0.95);
+      },
+      "image/jpeg",
+      0.95,
+    );
   };
 
   img.onerror = (): void => {
@@ -252,8 +266,7 @@ function applyTransform(): void {
   if (!svg) {
     return;
   }
-  svg.style.transform =
-    `translate(${vs.translateX}px, ${vs.translateY}px) scale(${vs.scale}) rotate(${vs.rotation}deg)`;
+  svg.style.transform = `translate(${vs.translateX}px, ${vs.translateY}px) scale(${vs.scale}) rotate(${vs.rotation}deg)`;
 }
 
 /** 将缩放值限制在允许范围内 */
@@ -315,40 +328,54 @@ function bindOverlayEvents(): void {
   const content = document.getElementById("mermaid-fullscreen-content");
 
   // --- 工具栏按钮 ---
-  document.getElementById("mf-zoom-in")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    zoomBy(ZOOM_STEP);
-  });
-  document.getElementById("mf-zoom-out")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    zoomBy(1 / ZOOM_STEP);
-  });
-  document.getElementById("mf-zoom-fit")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    fitToViewport();
-  });
-  document.getElementById("mf-zoom-original")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    resetToOriginal();
-  });
-  document.getElementById("mf-rotate-left")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    vs.rotation -= 90;
-    applyTransform();
-  });
-  document.getElementById("mf-rotate-right")?.addEventListener("click", (e): void => {
-    e.stopPropagation();
-    vs.rotation += 90;
-    applyTransform();
-  });
+  document
+    .getElementById("mf-zoom-in")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      zoomBy(ZOOM_STEP);
+    });
+  document
+    .getElementById("mf-zoom-out")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      zoomBy(1 / ZOOM_STEP);
+    });
+  document
+    .getElementById("mf-zoom-fit")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      fitToViewport();
+    });
+  document
+    .getElementById("mf-zoom-original")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      resetToOriginal();
+    });
+  document
+    .getElementById("mf-rotate-left")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      vs.rotation -= 90;
+      applyTransform();
+    });
+  document
+    .getElementById("mf-rotate-right")
+    ?.addEventListener("click", (e): void => {
+      e.stopPropagation();
+      vs.rotation += 90;
+      applyTransform();
+    });
   document.getElementById("mf-close")?.addEventListener("click", (): void => {
     closeFullscreen();
   });
-  document.getElementById("mf-download")?.addEventListener("click", (): void => {
-    if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
-      downloadSvgAsJpg(diagramSvgs[currentDiagramIndex], currentDiagramIndex);
-    }
-  });
+  document
+    .getElementById("mf-download")
+    ?.addEventListener("click", (): void => {
+      if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
+        downloadSvgAsJpg(diagramSvgs[currentDiagramIndex], currentDiagramIndex);
+      }
+    });
 
   if (!content) {
     return;
@@ -380,48 +407,64 @@ function bindOverlayEvents(): void {
   });
 
   // --- 滚轮缩放（以鼠标位置为中心） ---
-  content.addEventListener("wheel", (e): void => {
-    e.preventDefault();
-    const rect = content.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left - rect.width / 2;
-    const mouseY = e.clientY - rect.top - rect.height / 2;
-    const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-    const newScale = clampScale(vs.scale * factor);
-    const ratio = newScale / vs.scale;
-    vs.translateX = mouseX - ratio * (mouseX - vs.translateX);
-    vs.translateY = mouseY - ratio * (mouseY - vs.translateY);
-    vs.scale = newScale;
-    applyTransform();
-  }, { passive: false });
+  content.addEventListener(
+    "wheel",
+    (e): void => {
+      e.preventDefault();
+      const rect = content.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left - rect.width / 2;
+      const mouseY = e.clientY - rect.top - rect.height / 2;
+      const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+      const newScale = clampScale(vs.scale * factor);
+      const ratio = newScale / vs.scale;
+      vs.translateX = mouseX - ratio * (mouseX - vs.translateX);
+      vs.translateY = mouseY - ratio * (mouseY - vs.translateY);
+      vs.scale = newScale;
+      applyTransform();
+    },
+    { passive: false },
+  );
 
   // --- 触摸手势 ---
-  content.addEventListener("touchstart", (e): void => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      vs.isPinching = true;
-      vs.pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
-      vs.pinchStartScale = vs.scale;
-    } else if (e.touches.length === 1) {
-      vs.isDragging = true;
-      vs.dragStartX = e.touches[0].clientX;
-      vs.dragStartY = e.touches[0].clientY;
-      vs.dragStartTranslateX = vs.translateX;
-      vs.dragStartTranslateY = vs.translateY;
-    }
-  }, { passive: false });
-  content.addEventListener("touchmove", (e): void => {
-    if (vs.isPinching && e.touches.length === 2) {
-      e.preventDefault();
-      const dist = getTouchDistance(e.touches[0], e.touches[1]);
-      vs.scale = clampScale(vs.pinchStartScale * (dist / vs.pinchStartDistance));
-      applyTransform();
-    } else if (vs.isDragging && e.touches.length === 1) {
-      e.preventDefault();
-      vs.translateX = vs.dragStartTranslateX + (e.touches[0].clientX - vs.dragStartX);
-      vs.translateY = vs.dragStartTranslateY + (e.touches[0].clientY - vs.dragStartY);
-      applyTransform();
-    }
-  }, { passive: false });
+  content.addEventListener(
+    "touchstart",
+    (e): void => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        vs.isPinching = true;
+        vs.pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        vs.pinchStartScale = vs.scale;
+      } else if (e.touches.length === 1) {
+        vs.isDragging = true;
+        vs.dragStartX = e.touches[0].clientX;
+        vs.dragStartY = e.touches[0].clientY;
+        vs.dragStartTranslateX = vs.translateX;
+        vs.dragStartTranslateY = vs.translateY;
+      }
+    },
+    { passive: false },
+  );
+  content.addEventListener(
+    "touchmove",
+    (e): void => {
+      if (vs.isPinching && e.touches.length === 2) {
+        e.preventDefault();
+        const dist = getTouchDistance(e.touches[0], e.touches[1]);
+        vs.scale = clampScale(
+          vs.pinchStartScale * (dist / vs.pinchStartDistance),
+        );
+        applyTransform();
+      } else if (vs.isDragging && e.touches.length === 1) {
+        e.preventDefault();
+        vs.translateX =
+          vs.dragStartTranslateX + (e.touches[0].clientX - vs.dragStartX);
+        vs.translateY =
+          vs.dragStartTranslateY + (e.touches[0].clientY - vs.dragStartY);
+        applyTransform();
+      }
+    },
+    { passive: false },
+  );
   const endTouch = (): void => {
     vs.isPinching = false;
     vs.isDragging = false;
@@ -458,12 +501,22 @@ function bindOverlayEvents(): void {
 /**
  * 复制文本到剪贴板并在按钮上显示反馈
  */
-async function copyWithFeedback(text: string, btn: HTMLButtonElement): Promise<void> {
+async function copyWithFeedback(
+  text: string,
+  btn: HTMLButtonElement,
+): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-    const originalChildren = Array.from(btn.childNodes).map((node): Node => node.cloneNode(true));
+    const originalChildren = Array.from(btn.childNodes).map(
+      (node): Node => node.cloneNode(true),
+    );
     btn.classList.add("copied");
-    btn.replaceChildren(createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg>'), document.createTextNode("已复制"));
+    btn.replaceChildren(
+      createSvgIcon(
+        '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg>',
+      ),
+      document.createTextNode("已复制"),
+    );
     setTimeout((): void => {
       btn.classList.remove("copied");
       btn.replaceChildren(...originalChildren);
@@ -475,14 +528,20 @@ async function copyWithFeedback(text: string, btn: HTMLButtonElement): Promise<v
 
 /** 解析内置 SVG 图标字符串。 */
 function createSvgIcon(markup: string): SVGSVGElement {
-  const svg = new DOMParser().parseFromString(markup, "image/svg+xml").documentElement;
+  const svg = new DOMParser().parseFromString(
+    markup,
+    "image/svg+xml",
+  ).documentElement;
   return document.importNode(svg, true) as unknown as SVGSVGElement;
 }
 
 /**
  * 创建 mermaid 渲染失败的错误展示元素
  */
-function createErrorElement(source: string, errorMessage: string): HTMLDivElement {
+function createErrorElement(
+  source: string,
+  errorMessage: string,
+): HTMLDivElement {
   const container = document.createElement("div");
   container.className = "mermaid-container mermaid-error";
 
@@ -503,7 +562,9 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
   copyErrorBtn.className = "mermaid-error-btn";
   copyErrorBtn.title = "复制报错信息（含 Mermaid 版本号）";
   copyErrorBtn.append(
-    createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg>'),
+    createSvgIcon(
+      '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg>',
+    ),
     document.createTextNode("复制报错"),
   );
   copyErrorBtn.addEventListener("click", (e: Event): void => {
@@ -518,7 +579,9 @@ function createErrorElement(source: string, errorMessage: string): HTMLDivElemen
   copySourceBtn.className = "mermaid-error-btn";
   copySourceBtn.title = "复制 Mermaid 源代码";
   copySourceBtn.append(
-    createSvgIcon('<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg>'),
+    createSvgIcon(
+      '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg>',
+    ),
     document.createTextNode("复制代码"),
   );
   copySourceBtn.addEventListener("click", (e: Event): void => {
@@ -603,7 +666,9 @@ async function renderSingleDiagram(
  * 顺序执行渲染，避免 mermaid 内部全局状态冲突
  */
 async function renderMermaidBlocks(): Promise<void> {
-  const elements = Array.from(document.querySelectorAll<HTMLElement>(".mermaid"));
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>(".mermaid"),
+  );
   if (elements.length === 0) {
     return;
   }
@@ -666,7 +731,9 @@ async function rerenderDiagrams(): Promise<void> {
   }
 
   if (currentDiagramIndex >= 0 && diagramSvgs[currentDiagramIndex]) {
-    const fullscreenContent = document.getElementById("mermaid-fullscreen-content");
+    const fullscreenContent = document.getElementById(
+      "mermaid-fullscreen-content",
+    );
     if (fullscreenContent) {
       fullscreenContent.replaceChildren();
       setSvgContent(fullscreenContent, diagramSvgs[currentDiagramIndex]);
