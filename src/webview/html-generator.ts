@@ -662,6 +662,11 @@ function getReaderStyles(): string {
     a { color: var(--accent-color); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
+    /* 推断的代码路径链接：点状下划线与手写链接区分 */
+    a.code-link { text-decoration: underline dotted; text-underline-offset: 3px; }
+    a.code-link:hover { text-decoration-style: solid; }
+    a.code-link code { color: var(--accent-color); }
+
     /* 代码 */
     code { background: var(--code-bg); color: var(--code-text); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; }
     .code-block-wrapper { position: relative; margin-bottom: 1em; }

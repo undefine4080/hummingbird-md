@@ -1,5 +1,9 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
+import {
+  buildRelativeHref,
+  type CodePathCandidate,
+} from "../markdown/code-path.js";
 import { parseMarkdown } from "../markdown/parser.js";
 import { resolveLinkTarget } from "../markdown/link-resolver.js";
 import {
@@ -28,6 +32,14 @@ const STYLE_CONFIG_KEY = "hummingbird-md.readingStyle";
 function getTheme(): Theme {
   const current = vscode.window.activeColorTheme;
   return current.kind === vscode.ColorThemeKind.Dark ? "dark" : "light";
+}
+
+/** 对 URI path 的每一段做百分号编码，得到可直接用作 href 的路径。 */
+function encodeUriPath(uriPath: string): string {
+  return uriPath
+    .split("/")
+    .map((segment): string => encodeURIComponent(segment))
+    .join("/");
 }
 
 /** 阅读器面板管理器，负责管理 WebviewPanel 的生命周期和消息通信 */
@@ -299,11 +311,19 @@ export class ReaderPanel {
     const source = new TextDecoder("utf-8").decode(content);
     console.log("[HummingbirdMD] 文件读取完成，长度:", source.length);
 
+    // 代码路径自动链接（默认开启；配置变更后随下次文档刷新生效）
+    const codePathLinksEnabled = vscode.workspace
+      .getConfiguration("hummingbird-md")
+      .get<boolean>("codePathLinks", true);
+
     const doc = await parseMarkdown(source, {
       resolveImageUrl: createImageUrlResolver(
         this.currentUri,
         this.panel.webview,
       ),
+      ...(codePathLinksEnabled
+        ? { resolveCodePathHref: this.createCodePathResolver() }
+        : {}),
     });
     console.log(
       "[HummingbirdMD] Markdown 解析完成，标题数:",
@@ -464,6 +484,63 @@ export class ReaderPanel {
         normalizedPath === root ||
         normalizedPath.startsWith(`${root}${path.sep}`),
     );
+  }
+
+  /**
+   * 创建代码 span 文件引用解析器。
+   *
+   * 双基准（文档目录 → 工作区根）并行探测，仅真实存在的文件生成链接；
+   * 与 isAllowedFileUri 使用同一组根目录，保证渲染与点击行为一致。
+   * 基准顺序即优先级：文档目录命中优先于工作区根。
+   */
+  private createCodePathResolver(): (
+    candidate: CodePathCandidate,
+  ) => Promise<string | undefined> {
+    const documentDirectory = getDocumentDirectoryUri(this.currentUri);
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+      this.currentUri,
+    );
+    const bases = [
+      documentDirectory,
+      ...(workspaceFolder ? [workspaceFolder.uri] : []),
+    ].filter(
+      (base, index, list): boolean =>
+        list.findIndex(
+          (item): boolean => item.toString() === base.toString(),
+        ) === index,
+    );
+
+    return async (candidate): Promise<string | undefined> => {
+      const segments = candidate.path
+        .split("/")
+        .filter((segment): boolean => segment.length > 0 && segment !== ".");
+      const targets = bases.map((base): vscode.Uri =>
+        vscode.Uri.joinPath(base, ...segments),
+      );
+      const stats = await Promise.all(
+        targets.map((uri): Promise<vscode.FileStat | undefined> =>
+          Promise.resolve(vscode.workspace.fs.stat(uri)).catch(
+            (): undefined => undefined,
+          ),
+        ),
+      );
+
+      for (let index = 0; index < targets.length; index++) {
+        const stat = stats[index];
+        if (!stat || (stat.type & vscode.FileType.File) === 0) {
+          continue;
+        }
+        if (!this.isAllowedFileUri(targets[index])) {
+          continue;
+        }
+        return buildRelativeHref(
+          encodeUriPath(documentDirectory.path),
+          encodeUriPath(targets[index].path),
+          candidate.location,
+        );
+      }
+      return undefined;
+    };
   }
 
   /** 根据链接位置创建 VS Code 编辑器选择范围。 */

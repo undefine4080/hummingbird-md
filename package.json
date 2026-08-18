@@ -76,6 +76,16 @@
           "name": "dashboard"
         }
       ]
+    },
+    "configuration": {
+      "title": "Hummingbird MD",
+      "properties": {
+        "hummingbird-md.codePathLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "将反引号包裹且真实存在的代码文件路径自动转换为可点击链接（如 `src/main.ts:569-977`）"
+        }
+      }
     }
   },
   "scripts": {

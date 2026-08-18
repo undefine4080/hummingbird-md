@@ -3,6 +3,10 @@ import markdownItKatex from "@vscode/markdown-it-katex";
 import katex from "katex";
 import type { Heading, ParsedDocument } from "../types/index.js";
 import {
+  extractCodePathCandidate,
+  type CodePathCandidate,
+} from "./code-path.js";
+import {
   bundledLanguages,
   bundledThemes,
   createJavaScriptRegexEngine,
@@ -173,11 +177,22 @@ const defaultFenceRenderer = md.renderer.rules.fence;
 const defaultImageRenderer = md.renderer.rules.image;
 const defaultTableOpenRenderer = md.renderer.rules.table_open;
 const defaultTableCloseRenderer = md.renderer.rules.table_close;
+const defaultCodeInlineRenderer = md.renderer.rules.code_inline;
 
 /** Markdown 渲染时与当前文档相关的资源解析配置。 */
 export interface MarkdownRenderOptions {
   /** 将 Markdown 图片地址转换为 Webview 可访问的地址。 */
   resolveImageUrl?: (source: string) => string;
+
+  /**
+   * 解析代码 span 中的文件引用为链接地址。
+   *
+   * 返回 undefined 表示目标不存在或不可访问，保持纯代码样式。
+   * 文件存在性校验由调用方完成（vscode 依赖由调用方注入）。
+   */
+  resolveCodePathHref?: (
+    candidate: CodePathCandidate,
+  ) => Promise<string | undefined>;
 }
 
 // 自定义 fence 渲染器：mermaid → 前端渲染，其他 → Shiki 语法高亮
@@ -238,6 +253,69 @@ md.renderer.rules.table_close = (tokens, idx, options, env, self): string => {
     ? defaultTableCloseRenderer(tokens, idx, options, env, self)
     : self.renderToken(tokens, idx, options);
   return `${tableHtml}</div>`;
+};
+
+/**
+ * 收集需要解析的 code_inline token（跳过显式链接内的，按 token 引用返回）。
+ *
+ * 链接内的 code span 已有 href，再包一层会造成嵌套链接。
+ */
+function collectCodePathCandidates(
+  tokens: MdToken[],
+): Map<MdToken, CodePathCandidate> {
+  const candidates = new Map<MdToken, CodePathCandidate>();
+
+  const walk = (list: MdToken[], linkDepth: number): void => {
+    let depth = linkDepth;
+    for (const token of list) {
+      if (token.type === "link_open") {
+        depth++;
+        continue;
+      }
+      if (token.type === "link_close") {
+        depth = Math.max(0, depth - 1);
+        continue;
+      }
+      if (token.type === "code_inline") {
+        if (depth === 0) {
+          const candidate = extractCodePathCandidate(token.content);
+          if (candidate) {
+            candidates.set(token, candidate);
+          }
+        }
+        continue;
+      }
+      if (token.children) {
+        walk(token.children, depth);
+      }
+    }
+  };
+
+  walk(tokens, 0);
+  return candidates;
+}
+
+/** code_inline token → 已解析的文件链接地址。每次解析重新填充，随 token 回收。 */
+const codePathHrefByToken = new WeakMap<MdToken, string>();
+
+// 命中文件引用的代码 span 渲染为链接，未命中保持纯代码样式。
+md.renderer.rules.code_inline = (
+  tokens,
+  idx,
+  options,
+  env,
+  self,
+): string => {
+  const token = tokens[idx];
+  const codeHtml = defaultCodeInlineRenderer
+    ? defaultCodeInlineRenderer(tokens, idx, options, env, self)
+    : `<code>${escapeHtml(token.content)}</code>`;
+
+  const href = codePathHrefByToken.get(token);
+  if (!href) {
+    return codeHtml;
+  }
+  return `<a class="code-link" href="${href}">${codeHtml.trimEnd()}</a>\n`;
 };
 
 /** 为标题生成锚点 ID */
@@ -332,6 +410,45 @@ export async function parseMarkdown(
   }
 
   const headings = extractAndApplyHeadingIds(tokens);
+
+  // 两阶段：先集中解析代码路径候选（含文件存在性校验），再渲染
+  if (renderOptions.resolveCodePathHref) {
+    const candidates = collectCodePathCandidates(tokens);
+    if (candidates.size > 0) {
+      const resolver = renderOptions.resolveCodePathHref;
+      // 相同内容只解析一次，但结果绑定到每个 token，避免误包装链接内的同名 span
+      const contents = new Set<string>();
+      for (const token of candidates.keys()) {
+        contents.add(token.content);
+      }
+      const entries = await Promise.all(
+        Array.from(
+          contents,
+          async (content): Promise<[string, string] | null> => {
+            const candidate = extractCodePathCandidate(content);
+            if (!candidate) {
+              return null;
+            }
+            const href = await resolver(candidate);
+            return href ? [content, href] : null;
+          },
+        ),
+      );
+      const hrefs = new Map<string, string>();
+      for (const entry of entries) {
+        if (entry) {
+          hrefs.set(entry[0], entry[1]);
+        }
+      }
+      for (const [token] of candidates) {
+        const href = hrefs.get(token.content);
+        if (href) {
+          codePathHrefByToken.set(token, href);
+        }
+      }
+    }
+  }
+
   const html = md.renderer.render(tokens, md.options, renderOptions);
 
   return { source, html, headings };

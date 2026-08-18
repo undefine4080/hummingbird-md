@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { splitPathLocation } from "./code-path.js";
 import { getDocumentDirectoryUri } from "./resource-resolver.js";
 
 /** 文件链接中的行列范围。行号和列号均采用 Markdown 中常见的 1-based 表示。 */
@@ -108,20 +109,14 @@ export function parseLinkLocation(fragment: string): LinkLocation | undefined {
 function parsePathLocation(
   path: string,
 ): { path: string; location: LinkLocation } | undefined {
-  const match = path.match(/^(.+?):(\d+)(?::(\d+))?(?:-(\d+)(?::(\d+))?)?$/);
-  if (!match || (!/[\\/]/.test(match[1]) && !/\.[^/\\:]+$/.test(match[1]))) {
+  const split = splitPathLocation(path);
+  if (
+    !split ||
+    (!/[\\/]/.test(split.path) && !/\.[^/\\:]+$/.test(split.path))
+  ) {
     return undefined;
   }
-
-  return {
-    path: match[1],
-    location: {
-      startLine: Number(match[2]),
-      startColumn: match[3] ? Number(match[3]) : undefined,
-      endLine: match[4] ? Number(match[4]) : undefined,
-      endColumn: match[5] ? Number(match[5]) : undefined,
-    },
-  };
+  return split;
 }
 
 /** 判断是否应当交给系统默认应用打开的 URI scheme。 */
