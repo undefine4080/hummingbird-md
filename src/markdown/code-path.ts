@@ -134,7 +134,9 @@ function splitPathSegments(path: string): string[] {
 }
 
 /** 将行列位置格式化为链接 fragment：#L12、#L12-L20 或 #12:4-20:8。 */
-function formatLocationFragment(location: CodePathLocation | undefined): string {
+function formatLocationFragment(
+  location: CodePathLocation | undefined,
+): string {
   if (!location?.startLine) {
     return "";
   }

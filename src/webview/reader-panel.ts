@@ -514,14 +514,15 @@ export class ReaderPanel {
       const segments = candidate.path
         .split("/")
         .filter((segment): boolean => segment.length > 0 && segment !== ".");
-      const targets = bases.map((base): vscode.Uri =>
-        vscode.Uri.joinPath(base, ...segments),
+      const targets = bases.map(
+        (base): vscode.Uri => vscode.Uri.joinPath(base, ...segments),
       );
       const stats = await Promise.all(
-        targets.map((uri): Promise<vscode.FileStat | undefined> =>
-          Promise.resolve(vscode.workspace.fs.stat(uri)).catch(
-            (): undefined => undefined,
-          ),
+        targets.map(
+          (uri): Promise<vscode.FileStat | undefined> =>
+            Promise.resolve(vscode.workspace.fs.stat(uri)).catch(
+              (): undefined => undefined,
+            ),
         ),
       );
 
