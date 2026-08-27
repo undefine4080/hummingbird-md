@@ -20,6 +20,9 @@ let activeHeadingId = "";
 /** 程序化滚动期间抑制 headingChanged 消息 */
 let suppressHeadingChange = false;
 
+/** 表格全屏当前是否为适应宽度模式 */
+let tableFitMode = true;
+
 /** Intersection Observer 实例 */
 let headingObserver: IntersectionObserver | null = null;
 
@@ -33,6 +36,7 @@ export function initReader(): void {
   setupMessageListeners();
   initCodeBlockCopy();
   initLinkNavigation();
+  initTableFullscreen();
 
   // 应用保存的阅读样式配置
   const data = window.__INITIAL_DATA__;
@@ -248,15 +252,15 @@ function decodeUriComponentSafely(value: string): string {
 
 /** 复制图标 SVG */
 const COPY_ICON =
-  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>';
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>';
 
 /** 成功图标 SVG */
 const CHECK_ICON =
-  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>';
 
 /** 全屏图标 SVG */
 const FULLSCREEN_ICON =
-  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';
+  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';
 
 /** 安全插入内置 SVG 图标，避免通过 innerHTML 写入 DOM。 */
 function setSvgContent(element: HTMLElement, markup: string): void {
@@ -362,6 +366,148 @@ function bindCodeFullscreenEvents(): void {
     if (e.key === "Escape" && overlay?.classList.contains("active")) {
       e.preventDefault();
       closeCodeFullscreen();
+    }
+  });
+}
+
+/**
+ * 为所有表格添加全屏按钮
+ *
+ * parser 产出的表格被 .table-scroll 横向滚动容器包裹，
+ * 按钮需要挂在外层 .table-wrapper 上，避免随横向滚动移动。
+ */
+function initTableFullscreen(): void {
+  const scrollContainers = document.querySelectorAll<HTMLElement>(
+    "#reader-content .table-scroll",
+  );
+  scrollContainers.forEach((scroll: HTMLElement): void => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-wrapper";
+    scroll.parentNode?.insertBefore(wrapper, scroll);
+    wrapper.appendChild(scroll);
+
+    const fullscreenBtn = document.createElement("button");
+    fullscreenBtn.className = "table-fullscreen-btn";
+    fullscreenBtn.title = "全屏查看表格";
+    setSvgContent(fullscreenBtn, FULLSCREEN_ICON);
+    fullscreenBtn.addEventListener("click", (): void => {
+      showTableFullscreen(scroll);
+    });
+    wrapper.appendChild(fullscreenBtn);
+  });
+
+  bindTableFullscreenEvents();
+}
+
+/** 显示表格全屏 overlay */
+function showTableFullscreen(scroll: HTMLElement): void {
+  const overlay = document.getElementById("table-fullscreen-overlay");
+  const content = document.getElementById("table-fullscreen-content");
+  if (!overlay || !content) {
+    return;
+  }
+
+  const clone = scroll.cloneNode(true) as HTMLElement;
+  content.replaceChildren();
+  content.appendChild(clone);
+  overlay.classList.add("active");
+  applyTableFitMode("fit");
+}
+
+/** 关闭表格全屏 overlay */
+function closeTableFullscreen(): void {
+  const overlay = document.getElementById("table-fullscreen-overlay");
+  const content = document.getElementById("table-fullscreen-content");
+  if (overlay) {
+    overlay.classList.remove("active");
+  }
+  if (content) {
+    content.replaceChildren();
+  }
+}
+
+/**
+ * 切换表格全屏显示模式并计算自适应缩放
+ *
+ * fit 模式：表格拉满容器宽度，单元格换行；换行后仍超宽
+ * （列最小宽度之和超过容器宽度）时，固定表格自然宽度并整体 zoom 等比缩小。
+ * 选 zoom 而非 transform: scale 是因为它参与布局，高度同步收缩，垂直滚动正常。
+ */
+function applyTableFitMode(mode: "fit" | "original"): void {
+  const content = document.getElementById("table-fullscreen-content");
+  if (!content) {
+    return;
+  }
+  tableFitMode = mode === "fit";
+  content.dataset.mode = mode;
+
+  document.getElementById("tf-fit")?.classList.toggle("active", mode === "fit");
+  document
+    .getElementById("tf-original")
+    ?.classList.toggle("active", mode === "original");
+
+  const scroll = content.querySelector<HTMLElement>(".table-scroll");
+  const table = content.querySelector<HTMLElement>(".table-scroll > table");
+  const scaleLabel = document.getElementById("tf-scale");
+  if (!scroll || !table) {
+    return;
+  }
+
+  // 清除上一次模式设置的行内样式，恢复自然布局后重新测量
+  scroll.style.zoom = "";
+  table.style.width = "";
+
+  if (mode !== "fit") {
+    if (scaleLabel) {
+      scaleLabel.textContent = "100%";
+    }
+    return;
+  }
+
+  const available = scroll.clientWidth;
+  const natural = scroll.scrollWidth;
+  if (natural > available && available > 0) {
+    const scale = available / natural;
+    // zoom 缩放的是局部坐标系：宽度固定为自然宽度后，
+    // 视觉宽度 = natural * scale，恰好填满容器
+    table.style.width = `${natural}px`;
+    scroll.style.zoom = String(scale);
+    if (scaleLabel) {
+      scaleLabel.textContent = `${Math.round(scale * 100)}%`;
+    }
+  } else if (scaleLabel) {
+    scaleLabel.textContent = "100%";
+  }
+}
+
+/** 绑定表格全屏 overlay 事件 */
+function bindTableFullscreenEvents(): void {
+  document.getElementById("tf-close")?.addEventListener("click", (): void => {
+    closeTableFullscreen();
+  });
+
+  document.getElementById("tf-fit")?.addEventListener("click", (): void => {
+    applyTableFitMode("fit");
+  });
+
+  document
+    .getElementById("tf-original")
+    ?.addEventListener("click", (): void => {
+      applyTableFitMode("original");
+    });
+
+  const overlay = document.getElementById("table-fullscreen-overlay");
+  document.addEventListener("keydown", (e: KeyboardEvent): void => {
+    if (e.key === "Escape" && overlay?.classList.contains("active")) {
+      e.preventDefault();
+      closeTableFullscreen();
+    }
+  });
+
+  // 面板尺寸变化时重新自适应（仅在 fit 模式下）
+  window.addEventListener("resize", (): void => {
+    if (overlay?.classList.contains("active") && tableFitMode) {
+      applyTableFitMode("fit");
     }
   });
 }

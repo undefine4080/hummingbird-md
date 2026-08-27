@@ -102,6 +102,8 @@ function initMermaidConfig(): void {
   currentMermaidThemePreset = data?.mermaidThemePreset ?? "auto";
   applyMermaidConfig();
 
+  // SAFETY: mermaid 的 ESM 默认导出携带 version 字符串字段，类型定义未暴露，
+  // 此处仅读取且运行时校验 typeof，类型不匹配时保持默认值
   const v = (mermaid as unknown as Record<string, unknown>).version;
   if (typeof v === "string") {
     mermaidVersion = v;
@@ -513,7 +515,7 @@ async function copyWithFeedback(
     btn.classList.add("copied");
     btn.replaceChildren(
       createSvgIcon(
-        '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg>',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="14 4 8 10 5 7"/></svg>',
       ),
       document.createTextNode("已复制"),
     );
@@ -532,6 +534,8 @@ function createSvgIcon(markup: string): SVGSVGElement {
     markup,
     "image/svg+xml",
   ).documentElement;
+  // SAFETY: 以 image/svg+xml 解析成功的根元素必为 SVG 命名空间节点，
+  // importNode 保留其元素类型，仅 DOM 静态类型无法跨文档表达
   return document.importNode(svg, true) as unknown as SVGSVGElement;
 }
 
@@ -563,7 +567,7 @@ function createErrorElement(
   copyErrorBtn.title = "复制报错信息（含 Mermaid 版本号）";
   copyErrorBtn.append(
     createSvgIcon(
-      '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="9" height="13" rx="1.5"/><path d="M3 3h-.5A1.5 1.5 0 001 4.5v9A1.5 1.5 0 002.5 15H10a1.5 1.5 0 001.5-1.5V13"/></svg>',
     ),
     document.createTextNode("复制报错"),
   );
@@ -580,7 +584,7 @@ function createErrorElement(
   copySourceBtn.title = "复制 Mermaid 源代码";
   copySourceBtn.append(
     createSvgIcon(
-      '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/></svg>',
     ),
     document.createTextNode("复制代码"),
   );

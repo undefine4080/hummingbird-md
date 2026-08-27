@@ -393,6 +393,18 @@ export function getReaderHtml(
     </div>
     <div class="code-fullscreen-content" id="code-fullscreen-content"></div>
   </div>
+  <div id="table-fullscreen-overlay" class="table-fullscreen-overlay">
+    <div class="table-fullscreen-toolbar">
+      <span id="tf-title">表格预览</span>
+      <span class="tf-separator"></span>
+      <button id="tf-fit" class="active" title="单元格换行自适应，仍超宽时整体等比缩小">适应宽度</button>
+      <button id="tf-original" title="按原始尺寸显示，可横向滚动">实际大小</button>
+      <span id="tf-scale" class="tf-scale"></span>
+      <span class="tf-spacer"></span>
+      <button id="tf-close" title="关闭 (Esc)">✕</button>
+    </div>
+    <div class="table-fullscreen-content" id="table-fullscreen-content" data-mode="fit"></div>
+  </div>
   <script nonce="${nonce}">
     window.__INITIAL_DATA__ = ${JSON.stringify({ headings, theme, readingStyle: readingStyle ?? null, themeName: themeName ?? "classic", mermaidThemePreset: mermaidThemePreset ?? "auto" })};
   </script>
@@ -710,6 +722,33 @@ function getReaderStyles(): string {
     th { background: var(--bg-secondary); font-weight: 600; }
     tr:nth-child(even) { background: var(--table-stripe); }
 
+    /* 表格全屏按钮：wrapper 提供定位上下文，按钮不随横向滚动移动 */
+    .table-wrapper { position: relative; margin-bottom: 1em; }
+    .table-wrapper .table-scroll { margin-bottom: 0; }
+    .table-fullscreen-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 1;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px var(--shadow);
+      opacity: 0;
+      transition: opacity 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .table-fullscreen-btn svg { width: 15px; height: 15px; }
+    .table-wrapper:hover .table-fullscreen-btn { opacity: 1; }
+    .table-fullscreen-btn:hover { color: var(--accent-color); border-color: var(--accent-color); }
+
     /* 水平线 */
     hr { border: none; border-top: 1px solid var(--border-color); margin: 2em 0; }
 
@@ -768,6 +807,23 @@ function getReaderStyles(): string {
     .code-fullscreen-content { flex: 1; overflow: auto; padding: 24px 32px; }
     .code-fullscreen-content pre { margin: 0; padding: 24px; border-radius: 8px; overflow: visible; white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.7; }
     .code-fullscreen-content pre code { font-size: inherit; }
+
+    /* 表格全屏 */
+    .table-fullscreen-overlay { position: fixed; inset: 0; z-index: 1001; background: var(--overlay-bg); display: none; flex-direction: column; }
+    .table-fullscreen-overlay.active { display: flex; }
+    .table-fullscreen-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--overlay-toolbar-bg); color: var(--overlay-btn-text); font-size: 14px; }
+    .table-fullscreen-toolbar button { background: none; border: 1px solid var(--overlay-btn-border); color: var(--overlay-btn-text); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .table-fullscreen-toolbar button:hover { background: var(--overlay-btn-hover); }
+    .table-fullscreen-toolbar button.active { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+    .tf-separator { width: 1px; height: 20px; background: var(--overlay-btn-border); }
+    .tf-spacer { flex: 1; }
+    .tf-scale { font-size: 12px; opacity: 0.65; min-width: 44px; }
+    .table-fullscreen-content { flex: 1; overflow: auto; padding: 24px 32px; }
+    /* 适应宽度模式：单元格换行；列最小宽度之和仍超宽时由 JS 应用整体 zoom 缩放 */
+    .table-fullscreen-content[data-mode="fit"] .table-scroll { overflow: hidden; }
+    .table-fullscreen-content[data-mode="fit"] .table-scroll > table { width: 100%; }
+    .table-fullscreen-content[data-mode="fit"] th,
+    .table-fullscreen-content[data-mode="fit"] td { overflow-wrap: anywhere; }
   `;
 }
 
