@@ -986,8 +986,8 @@ function getTocStyles(): string {
   `;
 }
 
-/** 生成随机 nonce */
-function getNonce(): string {
+/** 生成随机 nonce（编辑器 Webview 与阅读器共用同一套 CSP 模式） */
+export function getNonce(): string {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const segments: string[] = [];

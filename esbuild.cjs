@@ -18,6 +18,17 @@ function copyKatexAssets() {
   });
 }
 
+/** 复制 Vditor 静态资源（lute/mermaid/katex 等），供编辑器 Webview 离线加载。
+ * 依赖升级后需删除 dist/vendor 重新构建（体积裁剪在 P0 处理）。 */
+function copyVditorAssets() {
+  const sourceRoot = path.join("node_modules", "vditor", "dist");
+  const targetRoot = path.join("dist", "vendor", "vditor", "dist");
+  if (fs.existsSync(path.join(targetRoot, "index.css"))) {
+    return;
+  }
+  fs.cpSync(sourceRoot, targetRoot, { recursive: true });
+}
+
 const sharedConfig = {
   bundle: true,
   sourcemap: !isProduction,
@@ -61,22 +72,36 @@ async function build() {
     outfile: "dist/toc.js",
   });
 
+  // Webview 编辑器前端（Vditor 以脚本标签从 vendor 资源加载，不打包）
+  copyVditorAssets();
+  const editorCtx = await esbuild.context({
+    ...sharedConfig,
+    entryPoints: ["src/editor/frontend/editor-entry.ts"],
+    format: "iife",
+    platform: "browser",
+    target: "chrome100",
+    outfile: "dist/editor.js",
+  });
+
   if (isProduction) {
     await Promise.all([
       extensionCtx.rebuild(),
       readerCtx.rebuild(),
       tocCtx.rebuild(),
+      editorCtx.rebuild(),
     ]);
     await Promise.all([
       extensionCtx.dispose(),
       readerCtx.dispose(),
       tocCtx.dispose(),
+      editorCtx.dispose(),
     ]);
   } else {
     await Promise.all([
       extensionCtx.watch(),
       readerCtx.watch(),
       tocCtx.watch(),
+      editorCtx.watch(),
     ]);
   }
 }

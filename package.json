@@ -25,6 +25,8 @@
   ],
   "activationEvents": [
     "onCommand:hummingbird-md.openReader",
+    "onCommand:hummingbird-md.edit",
+    "onCustomEditor:hummingbird-md.editor",
     "onView:hummingbird-md.tocView"
   ],
   "main": "./dist/extension.js",
@@ -33,6 +35,11 @@
       {
         "command": "hummingbird-md.openReader",
         "title": "Preview in Hummingbird MD",
+        "icon": "media/icon.svg"
+      },
+      {
+        "command": "hummingbird-md.edit",
+        "title": "Edit in Hummingbird MD",
         "icon": "media/icon.svg"
       }
     ],
@@ -49,11 +56,21 @@
           "command": "hummingbird-md.openReader",
           "when": "resourceExtname == .md",
           "group": "navigation"
+        },
+        {
+          "command": "hummingbird-md.edit",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
         }
       ],
       "editor/title/context": [
         {
           "command": "hummingbird-md.openReader",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        },
+        {
+          "command": "hummingbird-md.edit",
           "when": "resourceExtname == .md",
           "group": "navigation"
         }
@@ -68,6 +85,18 @@
         }
       ]
     },
+    "customEditors": [
+      {
+        "viewType": "hummingbird-md.editor",
+        "displayName": "Hummingbird MD 编辑器",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
     "views": {
       "hummingbird-md-toc": [
         {
@@ -111,6 +140,7 @@
     "katex": "^0.16.45",
     "markdown-it": "^14.0.0",
     "mermaid": "^11.14.0",
-    "shiki": "^4.0.2"
+    "shiki": "^4.0.2",
+    "vditor": "^4.0.0"
   }
 }

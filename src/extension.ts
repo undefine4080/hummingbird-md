@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands/register.js";
+import { EditorProvider } from "./editor/editor-provider.js";
 import type {
   MermaidThemePreset,
   ReadingStyleConfig,
@@ -151,6 +152,9 @@ export async function activate(
   registerCommands(context, (uri: vscode.Uri): Promise<void> => {
     return openReader(uri, context);
   });
+
+  // 注册 HMD 编辑器（Spike：编辑+预览双能力验证，详见 .ai/doc/edit-and-preview-architecture.md）
+  context.subscriptions.push(EditorProvider.register(context));
 
   context.subscriptions.push(tocDisposable);
 }

@@ -118,3 +118,26 @@ export type ThemeName =
   | "notion"
   | "ayu"
   | "flexoki";
+
+/** 编辑器 Webview 与插件主进程之间的消息协议（Spike：最小集，随阶段扩充） */
+export namespace EditorMessageProtocol {
+  /** 主进程 → Webview */
+  export type ToWebview =
+    | { type: "init"; data: EditorInitData }
+    | { type: "docChanged"; data: { text: string } };
+
+  /** Webview → 主进程 */
+  export type ToExtension =
+    | { type: "ready" }
+    | { type: "edit"; data: { text: string } };
+}
+
+/** 编辑器 Webview 的初始化数据 */
+export interface EditorInitData {
+  /** 文档初始文本 */
+  text: string;
+  /** 是否暗色主题（跟随 VS Code 颜色主题） */
+  dark: boolean;
+  /** Vditor 静态资源基址（webview 协议地址，指向含 dist/ 的目录） */
+  cdn: string;
+}
