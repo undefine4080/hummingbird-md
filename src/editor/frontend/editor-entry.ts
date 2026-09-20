@@ -45,6 +45,22 @@ function postMessage(message: EditorMessageProtocol.ToExtension): void {
   vscodeApi.postMessage(message);
 }
 
+/** 输入防抖：减少连续击键产生的回写频次（provider 侧另有写入合并兜底） */
+const EDIT_DEBOUNCE_MS = 200;
+let pendingEditValue: string | null = null;
+let editTimer: number | undefined;
+
+function flushPendingEdit(): void {
+  if (editTimer !== undefined) {
+    window.clearTimeout(editTimer);
+    editTimer = undefined;
+  }
+  if (pendingEditValue !== null) {
+    postMessage({ type: "edit", data: { text: pendingEditValue } });
+    pendingEditValue = null;
+  }
+}
+
 function main(): void {
   const data = window.__HMD_EDITOR_DATA__;
   const container = document.querySelector("#editor");
@@ -71,12 +87,22 @@ function main(): void {
       if (applyingExternal) {
         return;
       }
-      postMessage({ type: "edit", data: { text: value } });
+      pendingEditValue = value;
+      if (editTimer === undefined) {
+        editTimer = window.setTimeout((): void => {
+          editTimer = undefined;
+          flushPendingEdit();
+        }, EDIT_DEBOUNCE_MS);
+      }
     },
     after: (): void => {
       postMessage({ type: "ready" });
     },
   });
+
+  // 失焦与销毁前冲刷待写内容，避免最后一次编辑丢失
+  window.addEventListener("beforeunload", flushPendingEdit);
+  window.addEventListener("blur", flushPendingEdit);
 
   window.addEventListener("message", (event: MessageEvent) => {
     const message = event.data as EditorMessageProtocol.ToWebview | undefined;
