@@ -113,6 +113,12 @@
           "type": "boolean",
           "default": true,
           "description": "将反引号包裹且真实存在的代码文件路径自动转换为可点击链接（如 `src/main.ts:569-977`）"
+        },
+        "hummingbird-md.editor.largeFileThresholdKB": {
+          "type": "number",
+          "default": 128,
+          "minimum": 16,
+          "description": "编辑器大文档提示阈值（KB）。实测超过此值即时渲染输入会出现迟滞；达到 2 倍将拒绝打开并引导使用原生编辑器。"
         }
       }
     }

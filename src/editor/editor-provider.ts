@@ -44,6 +44,77 @@ export class EditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): void {
+    void this.setupEditor(document, webviewPanel, _token);
+  }
+
+  /**
+   * 初始化编辑器（异步：大文档确认对话框后继续）。
+   */
+  private async setupEditor(
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+    token: vscode.CancellationToken,
+  ): Promise<void> {
+    const proceed = await this.confirmLargeDocument(document);
+    if (token.isCancellationRequested) {
+      return;
+    }
+    if (!proceed) {
+      // 引导到原生编辑器并关掉当前的 HMD 标签页，避免留下空壳
+      await vscode.commands.executeCommand(
+        "vscode.openWith",
+        document.uri,
+        "default",
+      );
+      webviewPanel.dispose();
+      return;
+    }
+    this.initWebview(document, webviewPanel);
+  }
+
+  /**
+   * 大文档守门：依据 Lute 实测性能（dom2md 超线性，128KB 约 0.9s、
+   * 512KB 约 14s）在打开前降级。
+   *
+   * 阈值 = 配置 largeFileThresholdKB（默认 128KB）提示；2 倍阈值硬限，
+   * 默认动作为原生编辑器（Escape 也走安全默认）。
+   * 返回 false 表示不在 HMD 编辑器打开。
+   */
+  private async confirmLargeDocument(
+    document: vscode.TextDocument,
+  ): Promise<boolean> {
+    const sizeKB = Math.round(document.getText().length / 1024);
+    const thresholdKB = vscode.workspace
+      .getConfiguration("hummingbird-md.editor")
+      .get<number>("largeFileThresholdKB", 128);
+    if (sizeKB < thresholdKB) {
+      return true;
+    }
+
+    const openNative = "用原生编辑器打开";
+    const proceedLabel = "仍要打开";
+    const pick =
+      sizeKB >= thresholdKB * 2
+        ? await vscode.window.showWarningMessage(
+            `文档过大（约 ${sizeKB} KB），即时渲染编辑会严重卡顿。`,
+            { modal: false },
+            openNative,
+            proceedLabel,
+          )
+        : await vscode.window.showWarningMessage(
+            `文档较大（约 ${sizeKB} KB），即时渲染编辑可能出现输入迟滞。`,
+            { modal: false },
+            openNative,
+            proceedLabel,
+          );
+    return pick === proceedLabel;
+  }
+
+  /** 初始化 webview、同步订阅与消息处理（确认打开后才执行） */
+  private initWebview(
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+  ): void {
     const webview = webviewPanel.webview;
     webview.options = {
       enableScripts: true,
